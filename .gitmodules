@@ -1,6 +1,11 @@
-[submodule "cosmos-sdk"]
+[submodule "protos/cosmos-sdk"]
 	path = protos/cosmos-sdk
-	url = https://github.com/cosmos/cosmos-sdk
+	url = https://github.com/stratosnet/cosmos-sdk
+	branch = v0.47.x-stratos
+[submodule "protos/stratos-chain"]
+	path = protos/stratos-chain
+	url = https://github.com/stratosnet/stratos-chain
+	branch = v0.11.4
 [submodule "wasmd"]
 	path = protos/wasmd-src
 	url = https://github.com/CosmWasm/wasmd.git

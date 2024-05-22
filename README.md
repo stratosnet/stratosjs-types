@@ -1,4 +1,4 @@
-# cosmjs-types
+# stratosjs-types
 
 [![npm version](https://img.shields.io/npm/v/cosmjs-types.svg)](https://www.npmjs.com/package/cosmjs-types)
 

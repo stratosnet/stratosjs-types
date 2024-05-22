@@ -471,6 +471,30 @@ export interface FieldDescriptorProto {
    */
   jsonName: string;
   options?: FieldOptions;
+  /**
+   * If true, this is a proto3 "optional". When a proto3 field is optional, it
+   * tracks presence regardless of field type.
+   *
+   * When proto3_optional is true, this field must be belong to a oneof to
+   * signal to old proto3 clients that presence is tracked for this field. This
+   * oneof is known as a "synthetic" oneof, and this field must be its sole
+   * member (each proto3 optional field gets its own synthetic oneof). Synthetic
+   * oneofs exist in the descriptor only, and do not generate any API. Synthetic
+   * oneofs must be ordered after all "real" oneofs.
+   *
+   * For message fields, proto3_optional doesn't create any semantic change,
+   * since non-repeated message fields always track presence. However it still
+   * indicates the semantic detail of whether the user wrote "optional" or not.
+   * This can be useful for round-tripping the .proto file. For consistency we
+   * give message fields a synthetic oneof also, even though it is not required
+   * to track presence. This is especially important because the parser can't
+   * tell if a field is a message or an enum, so it must always create a
+   * synthetic oneof.
+   *
+   * Proto2 optional fields do not set this flag, because they already indicate
+   * optional with `LABEL_OPTIONAL`.
+   */
+  proto3Optional: boolean;
 }
 /** Describes a oneof. */
 export interface OneofDescriptorProto {
@@ -1694,6 +1718,7 @@ function createBaseFieldDescriptorProto(): FieldDescriptorProto {
     oneofIndex: 0,
     jsonName: "",
     options: undefined,
+    proto3Optional: false,
   };
 }
 export const FieldDescriptorProto = {
@@ -1728,6 +1753,9 @@ export const FieldDescriptorProto = {
     }
     if (message.options !== undefined) {
       FieldOptions.encode(message.options, writer.uint32(66).fork()).ldelim();
+    }
+    if (message.proto3Optional === true) {
+      writer.uint32(136).bool(message.proto3Optional);
     }
     return writer;
   },
@@ -1768,6 +1796,9 @@ export const FieldDescriptorProto = {
         case 8:
           message.options = FieldOptions.decode(reader, reader.uint32());
           break;
+        case 17:
+          message.proto3Optional = reader.bool();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -1787,6 +1818,7 @@ export const FieldDescriptorProto = {
     if (isSet(object.oneofIndex)) obj.oneofIndex = Number(object.oneofIndex);
     if (isSet(object.jsonName)) obj.jsonName = String(object.jsonName);
     if (isSet(object.options)) obj.options = FieldOptions.fromJSON(object.options);
+    if (isSet(object.proto3Optional)) obj.proto3Optional = Boolean(object.proto3Optional);
     return obj;
   },
   toJSON(message: FieldDescriptorProto): unknown {
@@ -1802,6 +1834,7 @@ export const FieldDescriptorProto = {
     message.jsonName !== undefined && (obj.jsonName = message.jsonName);
     message.options !== undefined &&
       (obj.options = message.options ? FieldOptions.toJSON(message.options) : undefined);
+    message.proto3Optional !== undefined && (obj.proto3Optional = message.proto3Optional);
     return obj;
   },
   fromPartial<I extends Exact<DeepPartial<FieldDescriptorProto>, I>>(object: I): FieldDescriptorProto {
@@ -1818,6 +1851,7 @@ export const FieldDescriptorProto = {
     if (object.options !== undefined && object.options !== null) {
       message.options = FieldOptions.fromPartial(object.options);
     }
+    message.proto3Optional = object.proto3Optional ?? false;
     return message;
   },
 };
