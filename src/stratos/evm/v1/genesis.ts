@@ -5,10 +5,10 @@ import { isSet, DeepPartial, Exact } from "../../../helpers";
 export const protobufPackage = "stratos.evm.v1";
 /** GenesisState defines the evm module's genesis state. */
 export interface GenesisState {
-  /** accounts is an array containing the ethereum genesis accounts. */
-  accounts: GenesisAccount[];
   /** params defines all the parameters of the module. */
   params: Params;
+  /** accounts is an array containing the ethereum genesis accounts. */
+  accounts: GenesisAccount[];
   /**
    * block gas is the amount of gas used on the last block before the upgrade.
    * Zero by default.
@@ -30,19 +30,19 @@ export interface GenesisAccount {
 }
 function createBaseGenesisState(): GenesisState {
   return {
-    accounts: [],
     params: Params.fromPartial({}),
+    accounts: [],
     blockGas: BigInt(0),
   };
 }
 export const GenesisState = {
   typeUrl: "/stratos.evm.v1.GenesisState",
   encode(message: GenesisState, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
-    for (const v of message.accounts) {
-      GenesisAccount.encode(v!, writer.uint32(10).fork()).ldelim();
-    }
     if (message.params !== undefined) {
-      Params.encode(message.params, writer.uint32(18).fork()).ldelim();
+      Params.encode(message.params, writer.uint32(10).fork()).ldelim();
+    }
+    for (const v of message.accounts) {
+      GenesisAccount.encode(v!, writer.uint32(18).fork()).ldelim();
     }
     if (message.blockGas !== BigInt(0)) {
       writer.uint32(24).uint64(message.blockGas);
@@ -57,10 +57,10 @@ export const GenesisState = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.accounts.push(GenesisAccount.decode(reader, reader.uint32()));
+          message.params = Params.decode(reader, reader.uint32());
           break;
         case 2:
-          message.params = Params.decode(reader, reader.uint32());
+          message.accounts.push(GenesisAccount.decode(reader, reader.uint32()));
           break;
         case 3:
           message.blockGas = reader.uint64();
@@ -74,29 +74,29 @@ export const GenesisState = {
   },
   fromJSON(object: any): GenesisState {
     const obj = createBaseGenesisState();
+    if (isSet(object.params)) obj.params = Params.fromJSON(object.params);
     if (Array.isArray(object?.accounts))
       obj.accounts = object.accounts.map((e: any) => GenesisAccount.fromJSON(e));
-    if (isSet(object.params)) obj.params = Params.fromJSON(object.params);
     if (isSet(object.blockGas)) obj.blockGas = BigInt(object.blockGas.toString());
     return obj;
   },
   toJSON(message: GenesisState): unknown {
     const obj: any = {};
+    message.params !== undefined && (obj.params = message.params ? Params.toJSON(message.params) : undefined);
     if (message.accounts) {
       obj.accounts = message.accounts.map((e) => (e ? GenesisAccount.toJSON(e) : undefined));
     } else {
       obj.accounts = [];
     }
-    message.params !== undefined && (obj.params = message.params ? Params.toJSON(message.params) : undefined);
     message.blockGas !== undefined && (obj.blockGas = (message.blockGas || BigInt(0)).toString());
     return obj;
   },
   fromPartial<I extends Exact<DeepPartial<GenesisState>, I>>(object: I): GenesisState {
     const message = createBaseGenesisState();
-    message.accounts = object.accounts?.map((e) => GenesisAccount.fromPartial(e)) || [];
     if (object.params !== undefined && object.params !== null) {
       message.params = Params.fromPartial(object.params);
     }
+    message.accounts = object.accounts?.map((e) => GenesisAccount.fromPartial(e)) || [];
     if (object.blockGas !== undefined && object.blockGas !== null) {
       message.blockGas = BigInt(object.blockGas.toString());
     }

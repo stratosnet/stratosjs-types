@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { SingleWalletVolume } from "./pot";
+import { SingleWalletVolume, Params } from "./pot";
 import { Coin } from "../../../cosmos/base/v1beta1/coin";
 import { BinaryReader, BinaryWriter } from "../../../binary";
 import { isSet, DeepPartial, Exact, bytesFromBase64, base64FromBytes, Rpc } from "../../../helpers";
@@ -23,14 +23,6 @@ export interface MsgWithdraw {
 }
 /** MsgWithdrawResponse defines the Msg/MsgWithdraw response type. */
 export interface MsgWithdrawResponse {}
-/** MsgLegacyWithdraw encapsulates an legacyWithdraw transaction as an SDK message. */
-export interface MsgLegacyWithdraw {
-  amount: Coin[];
-  from: string;
-  targetAddress: string;
-}
-/** MsgLegacyWithdrawResponse defines the Msg/MsgWithdraw response type. */
-export interface MsgLegacyWithdrawResponse {}
 /** MsgFoundationDeposit - encapsulates an FoundationDeposit transaction as an SDK message */
 export interface MsgFoundationDeposit {
   amount: Coin[];
@@ -54,6 +46,21 @@ export interface BLSSignatureInfo {
   signature: Uint8Array;
   txData: Uint8Array;
 }
+/** MsgUpdateParams defines a Msg for updating the x/pot module parameters. */
+export interface MsgUpdateParams {
+  /** authority is the address of the governance account. */
+  authority: string;
+  /**
+   * params defines the x/pot parameters to update.
+   * NOTE: All parameters must be supplied.
+   */
+  params: Params;
+}
+/**
+ * MsgUpdateParamsResponse defines the response structure for executing a
+ * MsgUpdateParams message.
+ */
+export interface MsgUpdateParamsResponse {}
 function createBaseMsgVolumeReport(): MsgVolumeReport {
   return {
     walletVolumes: [],
@@ -295,111 +302,6 @@ export const MsgWithdrawResponse = {
   },
   fromPartial<I extends Exact<DeepPartial<MsgWithdrawResponse>, I>>(_: I): MsgWithdrawResponse {
     const message = createBaseMsgWithdrawResponse();
-    return message;
-  },
-};
-function createBaseMsgLegacyWithdraw(): MsgLegacyWithdraw {
-  return {
-    amount: [],
-    from: "",
-    targetAddress: "",
-  };
-}
-export const MsgLegacyWithdraw = {
-  typeUrl: "/stratos.pot.v1.MsgLegacyWithdraw",
-  encode(message: MsgLegacyWithdraw, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
-    for (const v of message.amount) {
-      Coin.encode(v!, writer.uint32(10).fork()).ldelim();
-    }
-    if (message.from !== "") {
-      writer.uint32(18).string(message.from);
-    }
-    if (message.targetAddress !== "") {
-      writer.uint32(26).string(message.targetAddress);
-    }
-    return writer;
-  },
-  decode(input: BinaryReader | Uint8Array, length?: number): MsgLegacyWithdraw {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMsgLegacyWithdraw();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        case 1:
-          message.amount.push(Coin.decode(reader, reader.uint32()));
-          break;
-        case 2:
-          message.from = reader.string();
-          break;
-        case 3:
-          message.targetAddress = reader.string();
-          break;
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-  fromJSON(object: any): MsgLegacyWithdraw {
-    const obj = createBaseMsgLegacyWithdraw();
-    if (Array.isArray(object?.amount)) obj.amount = object.amount.map((e: any) => Coin.fromJSON(e));
-    if (isSet(object.from)) obj.from = String(object.from);
-    if (isSet(object.targetAddress)) obj.targetAddress = String(object.targetAddress);
-    return obj;
-  },
-  toJSON(message: MsgLegacyWithdraw): unknown {
-    const obj: any = {};
-    if (message.amount) {
-      obj.amount = message.amount.map((e) => (e ? Coin.toJSON(e) : undefined));
-    } else {
-      obj.amount = [];
-    }
-    message.from !== undefined && (obj.from = message.from);
-    message.targetAddress !== undefined && (obj.targetAddress = message.targetAddress);
-    return obj;
-  },
-  fromPartial<I extends Exact<DeepPartial<MsgLegacyWithdraw>, I>>(object: I): MsgLegacyWithdraw {
-    const message = createBaseMsgLegacyWithdraw();
-    message.amount = object.amount?.map((e) => Coin.fromPartial(e)) || [];
-    message.from = object.from ?? "";
-    message.targetAddress = object.targetAddress ?? "";
-    return message;
-  },
-};
-function createBaseMsgLegacyWithdrawResponse(): MsgLegacyWithdrawResponse {
-  return {};
-}
-export const MsgLegacyWithdrawResponse = {
-  typeUrl: "/stratos.pot.v1.MsgLegacyWithdrawResponse",
-  encode(_: MsgLegacyWithdrawResponse, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
-    return writer;
-  },
-  decode(input: BinaryReader | Uint8Array, length?: number): MsgLegacyWithdrawResponse {
-    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
-    let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMsgLegacyWithdrawResponse();
-    while (reader.pos < end) {
-      const tag = reader.uint32();
-      switch (tag >>> 3) {
-        default:
-          reader.skipType(tag & 7);
-          break;
-      }
-    }
-    return message;
-  },
-  fromJSON(_: any): MsgLegacyWithdrawResponse {
-    const obj = createBaseMsgLegacyWithdrawResponse();
-    return obj;
-  },
-  toJSON(_: MsgLegacyWithdrawResponse): unknown {
-    const obj: any = {};
-    return obj;
-  },
-  fromPartial<I extends Exact<DeepPartial<MsgLegacyWithdrawResponse>, I>>(_: I): MsgLegacyWithdrawResponse {
-    const message = createBaseMsgLegacyWithdrawResponse();
     return message;
   },
 };
@@ -716,13 +618,110 @@ export const BLSSignatureInfo = {
     return message;
   },
 };
-/** Msg defines the evm Msg service. */
+function createBaseMsgUpdateParams(): MsgUpdateParams {
+  return {
+    authority: "",
+    params: Params.fromPartial({}),
+  };
+}
+export const MsgUpdateParams = {
+  typeUrl: "/stratos.pot.v1.MsgUpdateParams",
+  encode(message: MsgUpdateParams, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+    if (message.authority !== "") {
+      writer.uint32(10).string(message.authority);
+    }
+    if (message.params !== undefined) {
+      Params.encode(message.params, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgUpdateParams {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgUpdateParams();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.authority = reader.string();
+          break;
+        case 2:
+          message.params = Params.decode(reader, reader.uint32());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(object: any): MsgUpdateParams {
+    const obj = createBaseMsgUpdateParams();
+    if (isSet(object.authority)) obj.authority = String(object.authority);
+    if (isSet(object.params)) obj.params = Params.fromJSON(object.params);
+    return obj;
+  },
+  toJSON(message: MsgUpdateParams): unknown {
+    const obj: any = {};
+    message.authority !== undefined && (obj.authority = message.authority);
+    message.params !== undefined && (obj.params = message.params ? Params.toJSON(message.params) : undefined);
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgUpdateParams>, I>>(object: I): MsgUpdateParams {
+    const message = createBaseMsgUpdateParams();
+    message.authority = object.authority ?? "";
+    if (object.params !== undefined && object.params !== null) {
+      message.params = Params.fromPartial(object.params);
+    }
+    return message;
+  },
+};
+function createBaseMsgUpdateParamsResponse(): MsgUpdateParamsResponse {
+  return {};
+}
+export const MsgUpdateParamsResponse = {
+  typeUrl: "/stratos.pot.v1.MsgUpdateParamsResponse",
+  encode(_: MsgUpdateParamsResponse, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgUpdateParamsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgUpdateParamsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(_: any): MsgUpdateParamsResponse {
+    const obj = createBaseMsgUpdateParamsResponse();
+    return obj;
+  },
+  toJSON(_: MsgUpdateParamsResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgUpdateParamsResponse>, I>>(_: I): MsgUpdateParamsResponse {
+    const message = createBaseMsgUpdateParamsResponse();
+    return message;
+  },
+};
+/** Msg defines the pot Msg service. */
 export interface Msg {
   HandleMsgVolumeReport(request: MsgVolumeReport): Promise<MsgVolumeReportResponse>;
   HandleMsgWithdraw(request: MsgWithdraw): Promise<MsgWithdrawResponse>;
-  HandleMsgLegacyWithdraw(request: MsgLegacyWithdraw): Promise<MsgLegacyWithdrawResponse>;
   HandleMsgFoundationDeposit(request: MsgFoundationDeposit): Promise<MsgFoundationDepositResponse>;
   HandleMsgSlashingResourceNode(request: MsgSlashingResourceNode): Promise<MsgSlashingResourceNodeResponse>;
+  /**
+   * UpdateParams defined a governance operation for updating the x/pot module parameters.
+   * The authority is hard-coded to the Cosmos SDK x/gov module account
+   */
+  UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse>;
 }
 export class MsgClientImpl implements Msg {
   private readonly rpc: Rpc;
@@ -730,9 +729,9 @@ export class MsgClientImpl implements Msg {
     this.rpc = rpc;
     this.HandleMsgVolumeReport = this.HandleMsgVolumeReport.bind(this);
     this.HandleMsgWithdraw = this.HandleMsgWithdraw.bind(this);
-    this.HandleMsgLegacyWithdraw = this.HandleMsgLegacyWithdraw.bind(this);
     this.HandleMsgFoundationDeposit = this.HandleMsgFoundationDeposit.bind(this);
     this.HandleMsgSlashingResourceNode = this.HandleMsgSlashingResourceNode.bind(this);
+    this.UpdateParams = this.UpdateParams.bind(this);
   }
   HandleMsgVolumeReport(request: MsgVolumeReport): Promise<MsgVolumeReportResponse> {
     const data = MsgVolumeReport.encode(request).finish();
@@ -744,11 +743,6 @@ export class MsgClientImpl implements Msg {
     const promise = this.rpc.request("stratos.pot.v1.Msg", "HandleMsgWithdraw", data);
     return promise.then((data) => MsgWithdrawResponse.decode(new BinaryReader(data)));
   }
-  HandleMsgLegacyWithdraw(request: MsgLegacyWithdraw): Promise<MsgLegacyWithdrawResponse> {
-    const data = MsgLegacyWithdraw.encode(request).finish();
-    const promise = this.rpc.request("stratos.pot.v1.Msg", "HandleMsgLegacyWithdraw", data);
-    return promise.then((data) => MsgLegacyWithdrawResponse.decode(new BinaryReader(data)));
-  }
   HandleMsgFoundationDeposit(request: MsgFoundationDeposit): Promise<MsgFoundationDepositResponse> {
     const data = MsgFoundationDeposit.encode(request).finish();
     const promise = this.rpc.request("stratos.pot.v1.Msg", "HandleMsgFoundationDeposit", data);
@@ -758,5 +752,10 @@ export class MsgClientImpl implements Msg {
     const data = MsgSlashingResourceNode.encode(request).finish();
     const promise = this.rpc.request("stratos.pot.v1.Msg", "HandleMsgSlashingResourceNode", data);
     return promise.then((data) => MsgSlashingResourceNodeResponse.decode(new BinaryReader(data)));
+  }
+  UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse> {
+    const data = MsgUpdateParams.encode(request).finish();
+    const promise = this.rpc.request("stratos.pot.v1.Msg", "UpdateParams", data);
+    return promise.then((data) => MsgUpdateParamsResponse.decode(new BinaryReader(data)));
   }
 }

@@ -6,8 +6,15 @@ import {
   bondStatusFromJSON,
   bondStatusToJSON,
 } from "../../../cosmos/staking/v1beta1/staking";
-import { ResourceNode, MetaNode } from "./register";
+import {
+  ResourceNode,
+  MetaNode,
+  MetaNodeRegistrationVotePool,
+  UnbondingNode,
+  KickMetaNodeVotePool,
+} from "./register";
 import { Any } from "../../../google/protobuf/any";
+import { Coin } from "../../../cosmos/base/v1beta1/coin";
 import { BinaryReader, BinaryWriter } from "../../../binary";
 import { isSet, DeepPartial, Exact } from "../../../helpers";
 export const protobufPackage = "stratos.register.v1";
@@ -19,14 +26,18 @@ export interface GenesisState {
   remainingNozLimit: string;
   slashing: Slashing[];
   depositNozRate: string;
+  metaNodeRegVotePool: MetaNodeRegistrationVotePool[];
+  unbondingNodes: UnbondingNode[];
+  kickMetaNodeVotePool: KickMetaNodeVotePool[];
 }
 export interface GenesisMetaNode {
   networkAddress: string;
   pubkey?: Any;
   suspend: boolean;
   status: BondStatus;
-  tokens: string;
+  tokens: Coin;
   ownerAddress: string;
+  beneficiaryAddress: string;
   description: Description;
 }
 export interface Slashing {
@@ -41,6 +52,9 @@ function createBaseGenesisState(): GenesisState {
     remainingNozLimit: "",
     slashing: [],
     depositNozRate: "",
+    metaNodeRegVotePool: [],
+    unbondingNodes: [],
+    kickMetaNodeVotePool: [],
   };
 }
 export const GenesisState = {
@@ -63,6 +77,15 @@ export const GenesisState = {
     }
     if (message.depositNozRate !== "") {
       writer.uint32(50).string(message.depositNozRate);
+    }
+    for (const v of message.metaNodeRegVotePool) {
+      MetaNodeRegistrationVotePool.encode(v!, writer.uint32(58).fork()).ldelim();
+    }
+    for (const v of message.unbondingNodes) {
+      UnbondingNode.encode(v!, writer.uint32(66).fork()).ldelim();
+    }
+    for (const v of message.kickMetaNodeVotePool) {
+      KickMetaNodeVotePool.encode(v!, writer.uint32(74).fork()).ldelim();
     }
     return writer;
   },
@@ -91,6 +114,15 @@ export const GenesisState = {
         case 6:
           message.depositNozRate = reader.string();
           break;
+        case 7:
+          message.metaNodeRegVotePool.push(MetaNodeRegistrationVotePool.decode(reader, reader.uint32()));
+          break;
+        case 8:
+          message.unbondingNodes.push(UnbondingNode.decode(reader, reader.uint32()));
+          break;
+        case 9:
+          message.kickMetaNodeVotePool.push(KickMetaNodeVotePool.decode(reader, reader.uint32()));
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -108,6 +140,16 @@ export const GenesisState = {
     if (isSet(object.remainingNozLimit)) obj.remainingNozLimit = String(object.remainingNozLimit);
     if (Array.isArray(object?.slashing)) obj.slashing = object.slashing.map((e: any) => Slashing.fromJSON(e));
     if (isSet(object.depositNozRate)) obj.depositNozRate = String(object.depositNozRate);
+    if (Array.isArray(object?.metaNodeRegVotePool))
+      obj.metaNodeRegVotePool = object.metaNodeRegVotePool.map((e: any) =>
+        MetaNodeRegistrationVotePool.fromJSON(e),
+      );
+    if (Array.isArray(object?.unbondingNodes))
+      obj.unbondingNodes = object.unbondingNodes.map((e: any) => UnbondingNode.fromJSON(e));
+    if (Array.isArray(object?.kickMetaNodeVotePool))
+      obj.kickMetaNodeVotePool = object.kickMetaNodeVotePool.map((e: any) =>
+        KickMetaNodeVotePool.fromJSON(e),
+      );
     return obj;
   },
   toJSON(message: GenesisState): unknown {
@@ -130,6 +172,25 @@ export const GenesisState = {
       obj.slashing = [];
     }
     message.depositNozRate !== undefined && (obj.depositNozRate = message.depositNozRate);
+    if (message.metaNodeRegVotePool) {
+      obj.metaNodeRegVotePool = message.metaNodeRegVotePool.map((e) =>
+        e ? MetaNodeRegistrationVotePool.toJSON(e) : undefined,
+      );
+    } else {
+      obj.metaNodeRegVotePool = [];
+    }
+    if (message.unbondingNodes) {
+      obj.unbondingNodes = message.unbondingNodes.map((e) => (e ? UnbondingNode.toJSON(e) : undefined));
+    } else {
+      obj.unbondingNodes = [];
+    }
+    if (message.kickMetaNodeVotePool) {
+      obj.kickMetaNodeVotePool = message.kickMetaNodeVotePool.map((e) =>
+        e ? KickMetaNodeVotePool.toJSON(e) : undefined,
+      );
+    } else {
+      obj.kickMetaNodeVotePool = [];
+    }
     return obj;
   },
   fromPartial<I extends Exact<DeepPartial<GenesisState>, I>>(object: I): GenesisState {
@@ -142,6 +203,11 @@ export const GenesisState = {
     message.remainingNozLimit = object.remainingNozLimit ?? "";
     message.slashing = object.slashing?.map((e) => Slashing.fromPartial(e)) || [];
     message.depositNozRate = object.depositNozRate ?? "";
+    message.metaNodeRegVotePool =
+      object.metaNodeRegVotePool?.map((e) => MetaNodeRegistrationVotePool.fromPartial(e)) || [];
+    message.unbondingNodes = object.unbondingNodes?.map((e) => UnbondingNode.fromPartial(e)) || [];
+    message.kickMetaNodeVotePool =
+      object.kickMetaNodeVotePool?.map((e) => KickMetaNodeVotePool.fromPartial(e)) || [];
     return message;
   },
 };
@@ -151,8 +217,9 @@ function createBaseGenesisMetaNode(): GenesisMetaNode {
     pubkey: undefined,
     suspend: false,
     status: 0,
-    tokens: "",
+    tokens: Coin.fromPartial({}),
     ownerAddress: "",
+    beneficiaryAddress: "",
     description: Description.fromPartial({}),
   };
 }
@@ -171,14 +238,17 @@ export const GenesisMetaNode = {
     if (message.status !== 0) {
       writer.uint32(32).int32(message.status);
     }
-    if (message.tokens !== "") {
-      writer.uint32(42).string(message.tokens);
+    if (message.tokens !== undefined) {
+      Coin.encode(message.tokens, writer.uint32(42).fork()).ldelim();
     }
     if (message.ownerAddress !== "") {
       writer.uint32(50).string(message.ownerAddress);
     }
+    if (message.beneficiaryAddress !== "") {
+      writer.uint32(58).string(message.beneficiaryAddress);
+    }
     if (message.description !== undefined) {
-      Description.encode(message.description, writer.uint32(58).fork()).ldelim();
+      Description.encode(message.description, writer.uint32(66).fork()).ldelim();
     }
     return writer;
   },
@@ -202,12 +272,15 @@ export const GenesisMetaNode = {
           message.status = reader.int32() as any;
           break;
         case 5:
-          message.tokens = reader.string();
+          message.tokens = Coin.decode(reader, reader.uint32());
           break;
         case 6:
           message.ownerAddress = reader.string();
           break;
         case 7:
+          message.beneficiaryAddress = reader.string();
+          break;
+        case 8:
           message.description = Description.decode(reader, reader.uint32());
           break;
         default:
@@ -223,8 +296,9 @@ export const GenesisMetaNode = {
     if (isSet(object.pubkey)) obj.pubkey = Any.fromJSON(object.pubkey);
     if (isSet(object.suspend)) obj.suspend = Boolean(object.suspend);
     if (isSet(object.status)) obj.status = bondStatusFromJSON(object.status);
-    if (isSet(object.tokens)) obj.tokens = String(object.tokens);
+    if (isSet(object.tokens)) obj.tokens = Coin.fromJSON(object.tokens);
     if (isSet(object.ownerAddress)) obj.ownerAddress = String(object.ownerAddress);
+    if (isSet(object.beneficiaryAddress)) obj.beneficiaryAddress = String(object.beneficiaryAddress);
     if (isSet(object.description)) obj.description = Description.fromJSON(object.description);
     return obj;
   },
@@ -234,8 +308,9 @@ export const GenesisMetaNode = {
     message.pubkey !== undefined && (obj.pubkey = message.pubkey ? Any.toJSON(message.pubkey) : undefined);
     message.suspend !== undefined && (obj.suspend = message.suspend);
     message.status !== undefined && (obj.status = bondStatusToJSON(message.status));
-    message.tokens !== undefined && (obj.tokens = message.tokens);
+    message.tokens !== undefined && (obj.tokens = message.tokens ? Coin.toJSON(message.tokens) : undefined);
     message.ownerAddress !== undefined && (obj.ownerAddress = message.ownerAddress);
+    message.beneficiaryAddress !== undefined && (obj.beneficiaryAddress = message.beneficiaryAddress);
     message.description !== undefined &&
       (obj.description = message.description ? Description.toJSON(message.description) : undefined);
     return obj;
@@ -248,8 +323,11 @@ export const GenesisMetaNode = {
     }
     message.suspend = object.suspend ?? false;
     message.status = object.status ?? 0;
-    message.tokens = object.tokens ?? "";
+    if (object.tokens !== undefined && object.tokens !== null) {
+      message.tokens = Coin.fromPartial(object.tokens);
+    }
     message.ownerAddress = object.ownerAddress ?? "";
+    message.beneficiaryAddress = object.beneficiaryAddress ?? "";
     if (object.description !== undefined && object.description !== null) {
       message.description = Description.fromPartial(object.description);
     }

@@ -28,6 +28,7 @@ export interface ResourceNode {
   creationTime: Timestamp;
   nodeType: number;
   effectiveTokens: string;
+  beneficiaryAddress: string;
 }
 export interface MetaNode {
   networkAddress: string;
@@ -38,9 +39,17 @@ export interface MetaNode {
   ownerAddress: string;
   description: Description;
   creationTime: Timestamp;
+  beneficiaryAddress: string;
 }
 export interface MetaNodeRegistrationVotePool {
   networkAddress: string;
+  approveList: string[];
+  rejectList: string[];
+  expireTime: Timestamp;
+  isVotePassed: boolean;
+}
+export interface KickMetaNodeVotePool {
+  targetNetworkAddress: string;
   approveList: string[];
   rejectList: string[];
   expireTime: Timestamp;
@@ -209,6 +218,7 @@ function createBaseResourceNode(): ResourceNode {
     creationTime: Timestamp.fromPartial({}),
     nodeType: 0,
     effectiveTokens: "",
+    beneficiaryAddress: "",
   };
 }
 export const ResourceNode = {
@@ -243,6 +253,9 @@ export const ResourceNode = {
     }
     if (message.effectiveTokens !== "") {
       writer.uint32(82).string(message.effectiveTokens);
+    }
+    if (message.beneficiaryAddress !== "") {
+      writer.uint32(90).string(message.beneficiaryAddress);
     }
     return writer;
   },
@@ -283,6 +296,9 @@ export const ResourceNode = {
         case 10:
           message.effectiveTokens = reader.string();
           break;
+        case 11:
+          message.beneficiaryAddress = reader.string();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -302,6 +318,7 @@ export const ResourceNode = {
     if (isSet(object.creationTime)) obj.creationTime = fromJsonTimestamp(object.creationTime);
     if (isSet(object.nodeType)) obj.nodeType = Number(object.nodeType);
     if (isSet(object.effectiveTokens)) obj.effectiveTokens = String(object.effectiveTokens);
+    if (isSet(object.beneficiaryAddress)) obj.beneficiaryAddress = String(object.beneficiaryAddress);
     return obj;
   },
   toJSON(message: ResourceNode): unknown {
@@ -318,6 +335,7 @@ export const ResourceNode = {
       (obj.creationTime = fromTimestamp(message.creationTime).toISOString());
     message.nodeType !== undefined && (obj.nodeType = Math.round(message.nodeType));
     message.effectiveTokens !== undefined && (obj.effectiveTokens = message.effectiveTokens);
+    message.beneficiaryAddress !== undefined && (obj.beneficiaryAddress = message.beneficiaryAddress);
     return obj;
   },
   fromPartial<I extends Exact<DeepPartial<ResourceNode>, I>>(object: I): ResourceNode {
@@ -338,6 +356,7 @@ export const ResourceNode = {
     }
     message.nodeType = object.nodeType ?? 0;
     message.effectiveTokens = object.effectiveTokens ?? "";
+    message.beneficiaryAddress = object.beneficiaryAddress ?? "";
     return message;
   },
 };
@@ -351,6 +370,7 @@ function createBaseMetaNode(): MetaNode {
     ownerAddress: "",
     description: Description.fromPartial({}),
     creationTime: Timestamp.fromPartial({}),
+    beneficiaryAddress: "",
   };
 }
 export const MetaNode = {
@@ -379,6 +399,9 @@ export const MetaNode = {
     }
     if (message.creationTime !== undefined) {
       Timestamp.encode(message.creationTime, writer.uint32(66).fork()).ldelim();
+    }
+    if (message.beneficiaryAddress !== "") {
+      writer.uint32(74).string(message.beneficiaryAddress);
     }
     return writer;
   },
@@ -413,6 +436,9 @@ export const MetaNode = {
         case 8:
           message.creationTime = Timestamp.decode(reader, reader.uint32());
           break;
+        case 9:
+          message.beneficiaryAddress = reader.string();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -430,6 +456,7 @@ export const MetaNode = {
     if (isSet(object.ownerAddress)) obj.ownerAddress = String(object.ownerAddress);
     if (isSet(object.description)) obj.description = Description.fromJSON(object.description);
     if (isSet(object.creationTime)) obj.creationTime = fromJsonTimestamp(object.creationTime);
+    if (isSet(object.beneficiaryAddress)) obj.beneficiaryAddress = String(object.beneficiaryAddress);
     return obj;
   },
   toJSON(message: MetaNode): unknown {
@@ -444,6 +471,7 @@ export const MetaNode = {
       (obj.description = message.description ? Description.toJSON(message.description) : undefined);
     message.creationTime !== undefined &&
       (obj.creationTime = fromTimestamp(message.creationTime).toISOString());
+    message.beneficiaryAddress !== undefined && (obj.beneficiaryAddress = message.beneficiaryAddress);
     return obj;
   },
   fromPartial<I extends Exact<DeepPartial<MetaNode>, I>>(object: I): MetaNode {
@@ -462,6 +490,7 @@ export const MetaNode = {
     if (object.creationTime !== undefined && object.creationTime !== null) {
       message.creationTime = Timestamp.fromPartial(object.creationTime);
     }
+    message.beneficiaryAddress = object.beneficiaryAddress ?? "";
     return message;
   },
 };
@@ -554,6 +583,102 @@ export const MetaNodeRegistrationVotePool = {
   ): MetaNodeRegistrationVotePool {
     const message = createBaseMetaNodeRegistrationVotePool();
     message.networkAddress = object.networkAddress ?? "";
+    message.approveList = object.approveList?.map((e) => e) || [];
+    message.rejectList = object.rejectList?.map((e) => e) || [];
+    if (object.expireTime !== undefined && object.expireTime !== null) {
+      message.expireTime = Timestamp.fromPartial(object.expireTime);
+    }
+    message.isVotePassed = object.isVotePassed ?? false;
+    return message;
+  },
+};
+function createBaseKickMetaNodeVotePool(): KickMetaNodeVotePool {
+  return {
+    targetNetworkAddress: "",
+    approveList: [],
+    rejectList: [],
+    expireTime: Timestamp.fromPartial({}),
+    isVotePassed: false,
+  };
+}
+export const KickMetaNodeVotePool = {
+  typeUrl: "/stratos.register.v1.KickMetaNodeVotePool",
+  encode(message: KickMetaNodeVotePool, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+    if (message.targetNetworkAddress !== "") {
+      writer.uint32(10).string(message.targetNetworkAddress);
+    }
+    for (const v of message.approveList) {
+      writer.uint32(18).string(v!);
+    }
+    for (const v of message.rejectList) {
+      writer.uint32(26).string(v!);
+    }
+    if (message.expireTime !== undefined) {
+      Timestamp.encode(message.expireTime, writer.uint32(34).fork()).ldelim();
+    }
+    if (message.isVotePassed === true) {
+      writer.uint32(40).bool(message.isVotePassed);
+    }
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): KickMetaNodeVotePool {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseKickMetaNodeVotePool();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.targetNetworkAddress = reader.string();
+          break;
+        case 2:
+          message.approveList.push(reader.string());
+          break;
+        case 3:
+          message.rejectList.push(reader.string());
+          break;
+        case 4:
+          message.expireTime = Timestamp.decode(reader, reader.uint32());
+          break;
+        case 5:
+          message.isVotePassed = reader.bool();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(object: any): KickMetaNodeVotePool {
+    const obj = createBaseKickMetaNodeVotePool();
+    if (isSet(object.targetNetworkAddress)) obj.targetNetworkAddress = String(object.targetNetworkAddress);
+    if (Array.isArray(object?.approveList)) obj.approveList = object.approveList.map((e: any) => String(e));
+    if (Array.isArray(object?.rejectList)) obj.rejectList = object.rejectList.map((e: any) => String(e));
+    if (isSet(object.expireTime)) obj.expireTime = fromJsonTimestamp(object.expireTime);
+    if (isSet(object.isVotePassed)) obj.isVotePassed = Boolean(object.isVotePassed);
+    return obj;
+  },
+  toJSON(message: KickMetaNodeVotePool): unknown {
+    const obj: any = {};
+    message.targetNetworkAddress !== undefined && (obj.targetNetworkAddress = message.targetNetworkAddress);
+    if (message.approveList) {
+      obj.approveList = message.approveList.map((e) => e);
+    } else {
+      obj.approveList = [];
+    }
+    if (message.rejectList) {
+      obj.rejectList = message.rejectList.map((e) => e);
+    } else {
+      obj.rejectList = [];
+    }
+    message.expireTime !== undefined && (obj.expireTime = fromTimestamp(message.expireTime).toISOString());
+    message.isVotePassed !== undefined && (obj.isVotePassed = message.isVotePassed);
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<KickMetaNodeVotePool>, I>>(object: I): KickMetaNodeVotePool {
+    const message = createBaseKickMetaNodeVotePool();
+    message.targetNetworkAddress = object.targetNetworkAddress ?? "";
     message.approveList = object.approveList?.map((e) => e) || [];
     message.rejectList = object.rejectList?.map((e) => e) || [];
     if (object.expireTime !== undefined && object.expireTime !== null) {

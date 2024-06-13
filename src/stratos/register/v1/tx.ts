@@ -1,7 +1,7 @@
 /* eslint-disable */
 import { Any } from "../../../google/protobuf/any";
 import { Coin } from "../../../cosmos/base/v1beta1/coin";
-import { Description } from "./register";
+import { Description, Params } from "./register";
 import { BinaryReader, BinaryWriter } from "../../../binary";
 import { isSet, DeepPartial, Exact, Rpc } from "../../../helpers";
 export const protobufPackage = "stratos.register.v1";
@@ -11,6 +11,7 @@ export interface MsgCreateResourceNode {
   pubkey?: Any;
   value: Coin;
   ownerAddress: string;
+  beneficiaryAddress: string;
   description: Description;
   nodeType: number;
 }
@@ -22,6 +23,7 @@ export interface MsgCreateMetaNode {
   pubkey?: Any;
   value: Coin;
   ownerAddress: string;
+  beneficiaryAddress: string;
   description: Description;
 }
 /** MsgCreateMetaNodeResponse defines the CreateMetaNode response type */
@@ -43,6 +45,7 @@ export interface MsgRemoveMetaNodeResponse {}
 /** MsgUpdateResourceNode defines a SDK message for updating an existing resource node. */
 export interface MsgUpdateResourceNode {
   description: Description;
+  beneficiaryAddress: string;
   networkAddress: string;
   ownerAddress: string;
   nodeType: number;
@@ -52,6 +55,7 @@ export interface MsgUpdateResourceNodeResponse {}
 /** MsgUpdateMetaNode defines a SDK message for updating an existing meta node. */
 export interface MsgUpdateMetaNode {
   description: Description;
+  beneficiaryAddress: string;
   networkAddress: string;
   ownerAddress: string;
 }
@@ -92,19 +96,35 @@ export interface MsgMetaNodeRegistrationVote {
 }
 /** MsgMetaNodeRegistrationVoteResponse defines the Msg/MetaNodeRegistrationVote response type. */
 export interface MsgMetaNodeRegistrationVoteResponse {}
-/** MsgWithdrawMetaNodeRegistrationDeposit defines a SDK message for withdrawing registration deposit of meta node. */
-export interface MsgWithdrawMetaNodeRegistrationDeposit {
-  networkAddress: string;
-  ownerAddress: string;
+export interface MsgKickMetaNodeVote {
+  targetNetworkAddress: string;
+  opinion: boolean;
+  voterNetworkAddress: string;
+  voterOwnerAddress: string;
 }
-/** MsgWithdrawMetaNodeRegistrationDepositResponse defines the Msg/WithdrawMetaNodeRegistrationDeposit response type. */
-export interface MsgWithdrawMetaNodeRegistrationDepositResponse {}
+export interface MsgKickMetaNodeVoteResponse {}
+/** MsgUpdateParams defines a Msg for updating the x/register module parameters. */
+export interface MsgUpdateParams {
+  /** authority is the address of the governance account. */
+  authority: string;
+  /**
+   * params defines the x/register parameters to update.
+   * NOTE: All parameters must be supplied.
+   */
+  params: Params;
+}
+/**
+ * MsgUpdateParamsResponse defines the response structure for executing a
+ * MsgUpdateParams message.
+ */
+export interface MsgUpdateParamsResponse {}
 function createBaseMsgCreateResourceNode(): MsgCreateResourceNode {
   return {
     networkAddress: "",
     pubkey: undefined,
     value: Coin.fromPartial({}),
     ownerAddress: "",
+    beneficiaryAddress: "",
     description: Description.fromPartial({}),
     nodeType: 0,
   };
@@ -124,11 +144,14 @@ export const MsgCreateResourceNode = {
     if (message.ownerAddress !== "") {
       writer.uint32(34).string(message.ownerAddress);
     }
+    if (message.beneficiaryAddress !== "") {
+      writer.uint32(42).string(message.beneficiaryAddress);
+    }
     if (message.description !== undefined) {
-      Description.encode(message.description, writer.uint32(42).fork()).ldelim();
+      Description.encode(message.description, writer.uint32(50).fork()).ldelim();
     }
     if (message.nodeType !== 0) {
-      writer.uint32(48).uint32(message.nodeType);
+      writer.uint32(56).uint32(message.nodeType);
     }
     return writer;
   },
@@ -152,9 +175,12 @@ export const MsgCreateResourceNode = {
           message.ownerAddress = reader.string();
           break;
         case 5:
-          message.description = Description.decode(reader, reader.uint32());
+          message.beneficiaryAddress = reader.string();
           break;
         case 6:
+          message.description = Description.decode(reader, reader.uint32());
+          break;
+        case 7:
           message.nodeType = reader.uint32();
           break;
         default:
@@ -170,6 +196,7 @@ export const MsgCreateResourceNode = {
     if (isSet(object.pubkey)) obj.pubkey = Any.fromJSON(object.pubkey);
     if (isSet(object.value)) obj.value = Coin.fromJSON(object.value);
     if (isSet(object.ownerAddress)) obj.ownerAddress = String(object.ownerAddress);
+    if (isSet(object.beneficiaryAddress)) obj.beneficiaryAddress = String(object.beneficiaryAddress);
     if (isSet(object.description)) obj.description = Description.fromJSON(object.description);
     if (isSet(object.nodeType)) obj.nodeType = Number(object.nodeType);
     return obj;
@@ -180,6 +207,7 @@ export const MsgCreateResourceNode = {
     message.pubkey !== undefined && (obj.pubkey = message.pubkey ? Any.toJSON(message.pubkey) : undefined);
     message.value !== undefined && (obj.value = message.value ? Coin.toJSON(message.value) : undefined);
     message.ownerAddress !== undefined && (obj.ownerAddress = message.ownerAddress);
+    message.beneficiaryAddress !== undefined && (obj.beneficiaryAddress = message.beneficiaryAddress);
     message.description !== undefined &&
       (obj.description = message.description ? Description.toJSON(message.description) : undefined);
     message.nodeType !== undefined && (obj.nodeType = Math.round(message.nodeType));
@@ -195,6 +223,7 @@ export const MsgCreateResourceNode = {
       message.value = Coin.fromPartial(object.value);
     }
     message.ownerAddress = object.ownerAddress ?? "";
+    message.beneficiaryAddress = object.beneficiaryAddress ?? "";
     if (object.description !== undefined && object.description !== null) {
       message.description = Description.fromPartial(object.description);
     }
@@ -245,6 +274,7 @@ function createBaseMsgCreateMetaNode(): MsgCreateMetaNode {
     pubkey: undefined,
     value: Coin.fromPartial({}),
     ownerAddress: "",
+    beneficiaryAddress: "",
     description: Description.fromPartial({}),
   };
 }
@@ -263,8 +293,11 @@ export const MsgCreateMetaNode = {
     if (message.ownerAddress !== "") {
       writer.uint32(34).string(message.ownerAddress);
     }
+    if (message.beneficiaryAddress !== "") {
+      writer.uint32(42).string(message.beneficiaryAddress);
+    }
     if (message.description !== undefined) {
-      Description.encode(message.description, writer.uint32(42).fork()).ldelim();
+      Description.encode(message.description, writer.uint32(50).fork()).ldelim();
     }
     return writer;
   },
@@ -288,6 +321,9 @@ export const MsgCreateMetaNode = {
           message.ownerAddress = reader.string();
           break;
         case 5:
+          message.beneficiaryAddress = reader.string();
+          break;
+        case 6:
           message.description = Description.decode(reader, reader.uint32());
           break;
         default:
@@ -303,6 +339,7 @@ export const MsgCreateMetaNode = {
     if (isSet(object.pubkey)) obj.pubkey = Any.fromJSON(object.pubkey);
     if (isSet(object.value)) obj.value = Coin.fromJSON(object.value);
     if (isSet(object.ownerAddress)) obj.ownerAddress = String(object.ownerAddress);
+    if (isSet(object.beneficiaryAddress)) obj.beneficiaryAddress = String(object.beneficiaryAddress);
     if (isSet(object.description)) obj.description = Description.fromJSON(object.description);
     return obj;
   },
@@ -312,6 +349,7 @@ export const MsgCreateMetaNode = {
     message.pubkey !== undefined && (obj.pubkey = message.pubkey ? Any.toJSON(message.pubkey) : undefined);
     message.value !== undefined && (obj.value = message.value ? Coin.toJSON(message.value) : undefined);
     message.ownerAddress !== undefined && (obj.ownerAddress = message.ownerAddress);
+    message.beneficiaryAddress !== undefined && (obj.beneficiaryAddress = message.beneficiaryAddress);
     message.description !== undefined &&
       (obj.description = message.description ? Description.toJSON(message.description) : undefined);
     return obj;
@@ -326,6 +364,7 @@ export const MsgCreateMetaNode = {
       message.value = Coin.fromPartial(object.value);
     }
     message.ownerAddress = object.ownerAddress ?? "";
+    message.beneficiaryAddress = object.beneficiaryAddress ?? "";
     if (object.description !== undefined && object.description !== null) {
       message.description = Description.fromPartial(object.description);
     }
@@ -554,6 +593,7 @@ export const MsgRemoveMetaNodeResponse = {
 function createBaseMsgUpdateResourceNode(): MsgUpdateResourceNode {
   return {
     description: Description.fromPartial({}),
+    beneficiaryAddress: "",
     networkAddress: "",
     ownerAddress: "",
     nodeType: 0,
@@ -565,14 +605,17 @@ export const MsgUpdateResourceNode = {
     if (message.description !== undefined) {
       Description.encode(message.description, writer.uint32(10).fork()).ldelim();
     }
+    if (message.beneficiaryAddress !== "") {
+      writer.uint32(18).string(message.beneficiaryAddress);
+    }
     if (message.networkAddress !== "") {
-      writer.uint32(18).string(message.networkAddress);
+      writer.uint32(26).string(message.networkAddress);
     }
     if (message.ownerAddress !== "") {
-      writer.uint32(26).string(message.ownerAddress);
+      writer.uint32(34).string(message.ownerAddress);
     }
     if (message.nodeType !== 0) {
-      writer.uint32(32).uint32(message.nodeType);
+      writer.uint32(40).uint32(message.nodeType);
     }
     return writer;
   },
@@ -587,12 +630,15 @@ export const MsgUpdateResourceNode = {
           message.description = Description.decode(reader, reader.uint32());
           break;
         case 2:
-          message.networkAddress = reader.string();
+          message.beneficiaryAddress = reader.string();
           break;
         case 3:
-          message.ownerAddress = reader.string();
+          message.networkAddress = reader.string();
           break;
         case 4:
+          message.ownerAddress = reader.string();
+          break;
+        case 5:
           message.nodeType = reader.uint32();
           break;
         default:
@@ -605,6 +651,7 @@ export const MsgUpdateResourceNode = {
   fromJSON(object: any): MsgUpdateResourceNode {
     const obj = createBaseMsgUpdateResourceNode();
     if (isSet(object.description)) obj.description = Description.fromJSON(object.description);
+    if (isSet(object.beneficiaryAddress)) obj.beneficiaryAddress = String(object.beneficiaryAddress);
     if (isSet(object.networkAddress)) obj.networkAddress = String(object.networkAddress);
     if (isSet(object.ownerAddress)) obj.ownerAddress = String(object.ownerAddress);
     if (isSet(object.nodeType)) obj.nodeType = Number(object.nodeType);
@@ -614,6 +661,7 @@ export const MsgUpdateResourceNode = {
     const obj: any = {};
     message.description !== undefined &&
       (obj.description = message.description ? Description.toJSON(message.description) : undefined);
+    message.beneficiaryAddress !== undefined && (obj.beneficiaryAddress = message.beneficiaryAddress);
     message.networkAddress !== undefined && (obj.networkAddress = message.networkAddress);
     message.ownerAddress !== undefined && (obj.ownerAddress = message.ownerAddress);
     message.nodeType !== undefined && (obj.nodeType = Math.round(message.nodeType));
@@ -624,6 +672,7 @@ export const MsgUpdateResourceNode = {
     if (object.description !== undefined && object.description !== null) {
       message.description = Description.fromPartial(object.description);
     }
+    message.beneficiaryAddress = object.beneficiaryAddress ?? "";
     message.networkAddress = object.networkAddress ?? "";
     message.ownerAddress = object.ownerAddress ?? "";
     message.nodeType = object.nodeType ?? 0;
@@ -670,6 +719,7 @@ export const MsgUpdateResourceNodeResponse = {
 function createBaseMsgUpdateMetaNode(): MsgUpdateMetaNode {
   return {
     description: Description.fromPartial({}),
+    beneficiaryAddress: "",
     networkAddress: "",
     ownerAddress: "",
   };
@@ -680,11 +730,14 @@ export const MsgUpdateMetaNode = {
     if (message.description !== undefined) {
       Description.encode(message.description, writer.uint32(10).fork()).ldelim();
     }
+    if (message.beneficiaryAddress !== "") {
+      writer.uint32(18).string(message.beneficiaryAddress);
+    }
     if (message.networkAddress !== "") {
-      writer.uint32(18).string(message.networkAddress);
+      writer.uint32(26).string(message.networkAddress);
     }
     if (message.ownerAddress !== "") {
-      writer.uint32(26).string(message.ownerAddress);
+      writer.uint32(34).string(message.ownerAddress);
     }
     return writer;
   },
@@ -699,9 +752,12 @@ export const MsgUpdateMetaNode = {
           message.description = Description.decode(reader, reader.uint32());
           break;
         case 2:
-          message.networkAddress = reader.string();
+          message.beneficiaryAddress = reader.string();
           break;
         case 3:
+          message.networkAddress = reader.string();
+          break;
+        case 4:
           message.ownerAddress = reader.string();
           break;
         default:
@@ -714,6 +770,7 @@ export const MsgUpdateMetaNode = {
   fromJSON(object: any): MsgUpdateMetaNode {
     const obj = createBaseMsgUpdateMetaNode();
     if (isSet(object.description)) obj.description = Description.fromJSON(object.description);
+    if (isSet(object.beneficiaryAddress)) obj.beneficiaryAddress = String(object.beneficiaryAddress);
     if (isSet(object.networkAddress)) obj.networkAddress = String(object.networkAddress);
     if (isSet(object.ownerAddress)) obj.ownerAddress = String(object.ownerAddress);
     return obj;
@@ -722,6 +779,7 @@ export const MsgUpdateMetaNode = {
     const obj: any = {};
     message.description !== undefined &&
       (obj.description = message.description ? Description.toJSON(message.description) : undefined);
+    message.beneficiaryAddress !== undefined && (obj.beneficiaryAddress = message.beneficiaryAddress);
     message.networkAddress !== undefined && (obj.networkAddress = message.networkAddress);
     message.ownerAddress !== undefined && (obj.ownerAddress = message.ownerAddress);
     return obj;
@@ -731,6 +789,7 @@ export const MsgUpdateMetaNode = {
     if (object.description !== undefined && object.description !== null) {
       message.description = Description.fromPartial(object.description);
     }
+    message.beneficiaryAddress = object.beneficiaryAddress ?? "";
     message.networkAddress = object.networkAddress ?? "";
     message.ownerAddress = object.ownerAddress ?? "";
     return message;
@@ -1242,38 +1301,49 @@ export const MsgMetaNodeRegistrationVoteResponse = {
     return message;
   },
 };
-function createBaseMsgWithdrawMetaNodeRegistrationDeposit(): MsgWithdrawMetaNodeRegistrationDeposit {
+function createBaseMsgKickMetaNodeVote(): MsgKickMetaNodeVote {
   return {
-    networkAddress: "",
-    ownerAddress: "",
+    targetNetworkAddress: "",
+    opinion: false,
+    voterNetworkAddress: "",
+    voterOwnerAddress: "",
   };
 }
-export const MsgWithdrawMetaNodeRegistrationDeposit = {
-  typeUrl: "/stratos.register.v1.MsgWithdrawMetaNodeRegistrationDeposit",
-  encode(
-    message: MsgWithdrawMetaNodeRegistrationDeposit,
-    writer: BinaryWriter = BinaryWriter.create(),
-  ): BinaryWriter {
-    if (message.networkAddress !== "") {
-      writer.uint32(10).string(message.networkAddress);
+export const MsgKickMetaNodeVote = {
+  typeUrl: "/stratos.register.v1.MsgKickMetaNodeVote",
+  encode(message: MsgKickMetaNodeVote, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+    if (message.targetNetworkAddress !== "") {
+      writer.uint32(10).string(message.targetNetworkAddress);
     }
-    if (message.ownerAddress !== "") {
-      writer.uint32(18).string(message.ownerAddress);
+    if (message.opinion === true) {
+      writer.uint32(16).bool(message.opinion);
+    }
+    if (message.voterNetworkAddress !== "") {
+      writer.uint32(26).string(message.voterNetworkAddress);
+    }
+    if (message.voterOwnerAddress !== "") {
+      writer.uint32(34).string(message.voterOwnerAddress);
     }
     return writer;
   },
-  decode(input: BinaryReader | Uint8Array, length?: number): MsgWithdrawMetaNodeRegistrationDeposit {
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgKickMetaNodeVote {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMsgWithdrawMetaNodeRegistrationDeposit();
+    const message = createBaseMsgKickMetaNodeVote();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.networkAddress = reader.string();
+          message.targetNetworkAddress = reader.string();
           break;
         case 2:
-          message.ownerAddress = reader.string();
+          message.opinion = reader.bool();
+          break;
+        case 3:
+          message.voterNetworkAddress = reader.string();
+          break;
+        case 4:
+          message.voterOwnerAddress = reader.string();
           break;
         default:
           reader.skipType(tag & 7);
@@ -1282,42 +1352,43 @@ export const MsgWithdrawMetaNodeRegistrationDeposit = {
     }
     return message;
   },
-  fromJSON(object: any): MsgWithdrawMetaNodeRegistrationDeposit {
-    const obj = createBaseMsgWithdrawMetaNodeRegistrationDeposit();
-    if (isSet(object.networkAddress)) obj.networkAddress = String(object.networkAddress);
-    if (isSet(object.ownerAddress)) obj.ownerAddress = String(object.ownerAddress);
+  fromJSON(object: any): MsgKickMetaNodeVote {
+    const obj = createBaseMsgKickMetaNodeVote();
+    if (isSet(object.targetNetworkAddress)) obj.targetNetworkAddress = String(object.targetNetworkAddress);
+    if (isSet(object.opinion)) obj.opinion = Boolean(object.opinion);
+    if (isSet(object.voterNetworkAddress)) obj.voterNetworkAddress = String(object.voterNetworkAddress);
+    if (isSet(object.voterOwnerAddress)) obj.voterOwnerAddress = String(object.voterOwnerAddress);
     return obj;
   },
-  toJSON(message: MsgWithdrawMetaNodeRegistrationDeposit): unknown {
+  toJSON(message: MsgKickMetaNodeVote): unknown {
     const obj: any = {};
-    message.networkAddress !== undefined && (obj.networkAddress = message.networkAddress);
-    message.ownerAddress !== undefined && (obj.ownerAddress = message.ownerAddress);
+    message.targetNetworkAddress !== undefined && (obj.targetNetworkAddress = message.targetNetworkAddress);
+    message.opinion !== undefined && (obj.opinion = message.opinion);
+    message.voterNetworkAddress !== undefined && (obj.voterNetworkAddress = message.voterNetworkAddress);
+    message.voterOwnerAddress !== undefined && (obj.voterOwnerAddress = message.voterOwnerAddress);
     return obj;
   },
-  fromPartial<I extends Exact<DeepPartial<MsgWithdrawMetaNodeRegistrationDeposit>, I>>(
-    object: I,
-  ): MsgWithdrawMetaNodeRegistrationDeposit {
-    const message = createBaseMsgWithdrawMetaNodeRegistrationDeposit();
-    message.networkAddress = object.networkAddress ?? "";
-    message.ownerAddress = object.ownerAddress ?? "";
+  fromPartial<I extends Exact<DeepPartial<MsgKickMetaNodeVote>, I>>(object: I): MsgKickMetaNodeVote {
+    const message = createBaseMsgKickMetaNodeVote();
+    message.targetNetworkAddress = object.targetNetworkAddress ?? "";
+    message.opinion = object.opinion ?? false;
+    message.voterNetworkAddress = object.voterNetworkAddress ?? "";
+    message.voterOwnerAddress = object.voterOwnerAddress ?? "";
     return message;
   },
 };
-function createBaseMsgWithdrawMetaNodeRegistrationDepositResponse(): MsgWithdrawMetaNodeRegistrationDepositResponse {
+function createBaseMsgKickMetaNodeVoteResponse(): MsgKickMetaNodeVoteResponse {
   return {};
 }
-export const MsgWithdrawMetaNodeRegistrationDepositResponse = {
-  typeUrl: "/stratos.register.v1.MsgWithdrawMetaNodeRegistrationDepositResponse",
-  encode(
-    _: MsgWithdrawMetaNodeRegistrationDepositResponse,
-    writer: BinaryWriter = BinaryWriter.create(),
-  ): BinaryWriter {
+export const MsgKickMetaNodeVoteResponse = {
+  typeUrl: "/stratos.register.v1.MsgKickMetaNodeVoteResponse",
+  encode(_: MsgKickMetaNodeVoteResponse, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
     return writer;
   },
-  decode(input: BinaryReader | Uint8Array, length?: number): MsgWithdrawMetaNodeRegistrationDepositResponse {
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgKickMetaNodeVoteResponse {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseMsgWithdrawMetaNodeRegistrationDepositResponse();
+    const message = createBaseMsgKickMetaNodeVoteResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -1328,18 +1399,111 @@ export const MsgWithdrawMetaNodeRegistrationDepositResponse = {
     }
     return message;
   },
-  fromJSON(_: any): MsgWithdrawMetaNodeRegistrationDepositResponse {
-    const obj = createBaseMsgWithdrawMetaNodeRegistrationDepositResponse();
+  fromJSON(_: any): MsgKickMetaNodeVoteResponse {
+    const obj = createBaseMsgKickMetaNodeVoteResponse();
     return obj;
   },
-  toJSON(_: MsgWithdrawMetaNodeRegistrationDepositResponse): unknown {
+  toJSON(_: MsgKickMetaNodeVoteResponse): unknown {
     const obj: any = {};
     return obj;
   },
-  fromPartial<I extends Exact<DeepPartial<MsgWithdrawMetaNodeRegistrationDepositResponse>, I>>(
+  fromPartial<I extends Exact<DeepPartial<MsgKickMetaNodeVoteResponse>, I>>(
     _: I,
-  ): MsgWithdrawMetaNodeRegistrationDepositResponse {
-    const message = createBaseMsgWithdrawMetaNodeRegistrationDepositResponse();
+  ): MsgKickMetaNodeVoteResponse {
+    const message = createBaseMsgKickMetaNodeVoteResponse();
+    return message;
+  },
+};
+function createBaseMsgUpdateParams(): MsgUpdateParams {
+  return {
+    authority: "",
+    params: Params.fromPartial({}),
+  };
+}
+export const MsgUpdateParams = {
+  typeUrl: "/stratos.register.v1.MsgUpdateParams",
+  encode(message: MsgUpdateParams, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+    if (message.authority !== "") {
+      writer.uint32(10).string(message.authority);
+    }
+    if (message.params !== undefined) {
+      Params.encode(message.params, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgUpdateParams {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgUpdateParams();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.authority = reader.string();
+          break;
+        case 2:
+          message.params = Params.decode(reader, reader.uint32());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(object: any): MsgUpdateParams {
+    const obj = createBaseMsgUpdateParams();
+    if (isSet(object.authority)) obj.authority = String(object.authority);
+    if (isSet(object.params)) obj.params = Params.fromJSON(object.params);
+    return obj;
+  },
+  toJSON(message: MsgUpdateParams): unknown {
+    const obj: any = {};
+    message.authority !== undefined && (obj.authority = message.authority);
+    message.params !== undefined && (obj.params = message.params ? Params.toJSON(message.params) : undefined);
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgUpdateParams>, I>>(object: I): MsgUpdateParams {
+    const message = createBaseMsgUpdateParams();
+    message.authority = object.authority ?? "";
+    if (object.params !== undefined && object.params !== null) {
+      message.params = Params.fromPartial(object.params);
+    }
+    return message;
+  },
+};
+function createBaseMsgUpdateParamsResponse(): MsgUpdateParamsResponse {
+  return {};
+}
+export const MsgUpdateParamsResponse = {
+  typeUrl: "/stratos.register.v1.MsgUpdateParamsResponse",
+  encode(_: MsgUpdateParamsResponse, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgUpdateParamsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgUpdateParamsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(_: any): MsgUpdateParamsResponse {
+    const obj = createBaseMsgUpdateParamsResponse();
+    return obj;
+  },
+  toJSON(_: MsgUpdateParamsResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgUpdateParamsResponse>, I>>(_: I): MsgUpdateParamsResponse {
+    const message = createBaseMsgUpdateParamsResponse();
     return message;
   },
 };
@@ -1364,9 +1528,12 @@ export interface Msg {
   HandleMsgMetaNodeRegistrationVote(
     request: MsgMetaNodeRegistrationVote,
   ): Promise<MsgMetaNodeRegistrationVoteResponse>;
-  HandleMsgWithdrawMetaNodeRegistrationDeposit(
-    request: MsgWithdrawMetaNodeRegistrationDeposit,
-  ): Promise<MsgWithdrawMetaNodeRegistrationDepositResponse>;
+  HandleMsgKickMetaNodeVote(request: MsgKickMetaNodeVote): Promise<MsgKickMetaNodeVoteResponse>;
+  /**
+   * UpdateParams defined a governance operation for updating the x/register module parameters.
+   * The authority is hard-coded to the Cosmos SDK x/gov module account
+   */
+  UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse>;
 }
 export class MsgClientImpl implements Msg {
   private readonly rpc: Rpc;
@@ -1382,8 +1549,8 @@ export class MsgClientImpl implements Msg {
     this.HandleMsgUpdateMetaNode = this.HandleMsgUpdateMetaNode.bind(this);
     this.HandleMsgUpdateMetaNodeDeposit = this.HandleMsgUpdateMetaNodeDeposit.bind(this);
     this.HandleMsgMetaNodeRegistrationVote = this.HandleMsgMetaNodeRegistrationVote.bind(this);
-    this.HandleMsgWithdrawMetaNodeRegistrationDeposit =
-      this.HandleMsgWithdrawMetaNodeRegistrationDeposit.bind(this);
+    this.HandleMsgKickMetaNodeVote = this.HandleMsgKickMetaNodeVote.bind(this);
+    this.UpdateParams = this.UpdateParams.bind(this);
   }
   HandleMsgCreateResourceNode(request: MsgCreateResourceNode): Promise<MsgCreateResourceNodeResponse> {
     const data = MsgCreateResourceNode.encode(request).finish();
@@ -1443,17 +1610,14 @@ export class MsgClientImpl implements Msg {
     const promise = this.rpc.request("stratos.register.v1.Msg", "HandleMsgMetaNodeRegistrationVote", data);
     return promise.then((data) => MsgMetaNodeRegistrationVoteResponse.decode(new BinaryReader(data)));
   }
-  HandleMsgWithdrawMetaNodeRegistrationDeposit(
-    request: MsgWithdrawMetaNodeRegistrationDeposit,
-  ): Promise<MsgWithdrawMetaNodeRegistrationDepositResponse> {
-    const data = MsgWithdrawMetaNodeRegistrationDeposit.encode(request).finish();
-    const promise = this.rpc.request(
-      "stratos.register.v1.Msg",
-      "HandleMsgWithdrawMetaNodeRegistrationDeposit",
-      data,
-    );
-    return promise.then((data) =>
-      MsgWithdrawMetaNodeRegistrationDepositResponse.decode(new BinaryReader(data)),
-    );
+  HandleMsgKickMetaNodeVote(request: MsgKickMetaNodeVote): Promise<MsgKickMetaNodeVoteResponse> {
+    const data = MsgKickMetaNodeVote.encode(request).finish();
+    const promise = this.rpc.request("stratos.register.v1.Msg", "HandleMsgKickMetaNodeVote", data);
+    return promise.then((data) => MsgKickMetaNodeVoteResponse.decode(new BinaryReader(data)));
+  }
+  UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse> {
+    const data = MsgUpdateParams.encode(request).finish();
+    const promise = this.rpc.request("stratos.register.v1.Msg", "UpdateParams", data);
+    return promise.then((data) => MsgUpdateParamsResponse.decode(new BinaryReader(data)));
   }
 }

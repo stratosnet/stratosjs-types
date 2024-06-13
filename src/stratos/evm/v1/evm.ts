@@ -20,7 +20,7 @@ export interface Params {
   feeMarketParams: FeeMarketParams;
 }
 /**
- * ChainConfig defines the Ethereum ChainConfig parameters using *sdk.Int values
+ * ChainConfig defines the Ethereum ChainConfig parameters using *sdkmath.Int values
  * instead of *big.Int.
  */
 export interface ChainConfig {

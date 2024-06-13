@@ -8,6 +8,7 @@ export const protobufPackage = "stratos.crypto.v1.ethsecp256k1";
  * key format.
  */
 export interface PubKey {
+  /** key is the public key in byte form */
   key: Uint8Array;
 }
 /**
@@ -15,10 +16,7 @@ export interface PubKey {
  * Tendermint's PrivateKey interface.
  */
 export interface PrivKey {
-  /**
-   * PrivKey defines a type alias for an ecdsa.PrivateKey that implements
-   * Tendermint's PrivateKey interface.
-   */
+  /** key is the private key in byte form */
   key: Uint8Array;
 }
 function createBasePubKey(): PubKey {

@@ -5,7 +5,7 @@
 [submodule "protos/stratos-chain"]
 	path = protos/stratos-chain
 	url = https://github.com/stratosnet/stratos-chain
-	branch = v0.11.4
+	branch = v0.12.1
 [submodule "wasmd"]
 	path = protos/wasmd-src
 	url = https://github.com/CosmWasm/wasmd.git

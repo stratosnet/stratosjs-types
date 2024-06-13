@@ -1,6 +1,6 @@
 /* eslint-disable */
 import { Any } from "../../../google/protobuf/any";
-import { AccessTuple, Log } from "./evm";
+import { Params, AccessTuple, Log } from "./evm";
 import { BinaryReader, BinaryWriter } from "../../../binary";
 import { isSet, DeepPartial, Exact, bytesFromBase64, base64FromBytes, Rpc } from "../../../helpers";
 export const protobufPackage = "stratos.evm.v1";
@@ -114,6 +114,39 @@ export interface MsgEthereumTxResponse {
   /** gas consumed by the transaction */
   gasUsed: bigint;
 }
+/** MsgUpdateParams defines a Msg for updating the x/evm module parameters. */
+export interface MsgUpdateParams {
+  /** authority is the address of the governance account. */
+  authority: string;
+  /**
+   * params defines the x/evm parameters to update.
+   * NOTE: All parameters must be supplied.
+   */
+  params: Params;
+}
+/**
+ * MsgUpdateParamsResponse defines the response structure for executing a
+ * MsgUpdateParams message.
+ */
+export interface MsgUpdateParamsResponse {}
+/** MsgUpdateImplmentationProposal used to update implemntation for genesis proxies */
+export interface MsgUpdateImplmentationProposal {
+  /** authority is the address of the governance account. */
+  authority: string;
+  /** proxy address where data will be executed */
+  proxyAddress: string;
+  /** implmentation address as API for a storage */
+  implementationAddress: string;
+  /** data for execution */
+  data: Uint8Array;
+  /** value for proxy func call */
+  value: string;
+}
+/**
+ * MsgUpdateImplmentationProposalResponse defines the response structure for executing a
+ * MsgUpdateImplmentationProposal message.
+ */
+export interface MsgUpdateImplmentationProposalResponse {}
 function createBaseMsgEthereumTx(): MsgEthereumTx {
   return {
     data: undefined,
@@ -782,20 +815,269 @@ export const MsgEthereumTxResponse = {
     return message;
   },
 };
+function createBaseMsgUpdateParams(): MsgUpdateParams {
+  return {
+    authority: "",
+    params: Params.fromPartial({}),
+  };
+}
+export const MsgUpdateParams = {
+  typeUrl: "/stratos.evm.v1.MsgUpdateParams",
+  encode(message: MsgUpdateParams, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+    if (message.authority !== "") {
+      writer.uint32(10).string(message.authority);
+    }
+    if (message.params !== undefined) {
+      Params.encode(message.params, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgUpdateParams {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgUpdateParams();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.authority = reader.string();
+          break;
+        case 2:
+          message.params = Params.decode(reader, reader.uint32());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(object: any): MsgUpdateParams {
+    const obj = createBaseMsgUpdateParams();
+    if (isSet(object.authority)) obj.authority = String(object.authority);
+    if (isSet(object.params)) obj.params = Params.fromJSON(object.params);
+    return obj;
+  },
+  toJSON(message: MsgUpdateParams): unknown {
+    const obj: any = {};
+    message.authority !== undefined && (obj.authority = message.authority);
+    message.params !== undefined && (obj.params = message.params ? Params.toJSON(message.params) : undefined);
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgUpdateParams>, I>>(object: I): MsgUpdateParams {
+    const message = createBaseMsgUpdateParams();
+    message.authority = object.authority ?? "";
+    if (object.params !== undefined && object.params !== null) {
+      message.params = Params.fromPartial(object.params);
+    }
+    return message;
+  },
+};
+function createBaseMsgUpdateParamsResponse(): MsgUpdateParamsResponse {
+  return {};
+}
+export const MsgUpdateParamsResponse = {
+  typeUrl: "/stratos.evm.v1.MsgUpdateParamsResponse",
+  encode(_: MsgUpdateParamsResponse, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgUpdateParamsResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgUpdateParamsResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(_: any): MsgUpdateParamsResponse {
+    const obj = createBaseMsgUpdateParamsResponse();
+    return obj;
+  },
+  toJSON(_: MsgUpdateParamsResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgUpdateParamsResponse>, I>>(_: I): MsgUpdateParamsResponse {
+    const message = createBaseMsgUpdateParamsResponse();
+    return message;
+  },
+};
+function createBaseMsgUpdateImplmentationProposal(): MsgUpdateImplmentationProposal {
+  return {
+    authority: "",
+    proxyAddress: "",
+    implementationAddress: "",
+    data: new Uint8Array(),
+    value: "",
+  };
+}
+export const MsgUpdateImplmentationProposal = {
+  typeUrl: "/stratos.evm.v1.MsgUpdateImplmentationProposal",
+  encode(
+    message: MsgUpdateImplmentationProposal,
+    writer: BinaryWriter = BinaryWriter.create(),
+  ): BinaryWriter {
+    if (message.authority !== "") {
+      writer.uint32(10).string(message.authority);
+    }
+    if (message.proxyAddress !== "") {
+      writer.uint32(18).string(message.proxyAddress);
+    }
+    if (message.implementationAddress !== "") {
+      writer.uint32(26).string(message.implementationAddress);
+    }
+    if (message.data.length !== 0) {
+      writer.uint32(34).bytes(message.data);
+    }
+    if (message.value !== "") {
+      writer.uint32(42).string(message.value);
+    }
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgUpdateImplmentationProposal {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgUpdateImplmentationProposal();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.authority = reader.string();
+          break;
+        case 2:
+          message.proxyAddress = reader.string();
+          break;
+        case 3:
+          message.implementationAddress = reader.string();
+          break;
+        case 4:
+          message.data = reader.bytes();
+          break;
+        case 5:
+          message.value = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(object: any): MsgUpdateImplmentationProposal {
+    const obj = createBaseMsgUpdateImplmentationProposal();
+    if (isSet(object.authority)) obj.authority = String(object.authority);
+    if (isSet(object.proxyAddress)) obj.proxyAddress = String(object.proxyAddress);
+    if (isSet(object.implementationAddress)) obj.implementationAddress = String(object.implementationAddress);
+    if (isSet(object.data)) obj.data = bytesFromBase64(object.data);
+    if (isSet(object.value)) obj.value = String(object.value);
+    return obj;
+  },
+  toJSON(message: MsgUpdateImplmentationProposal): unknown {
+    const obj: any = {};
+    message.authority !== undefined && (obj.authority = message.authority);
+    message.proxyAddress !== undefined && (obj.proxyAddress = message.proxyAddress);
+    message.implementationAddress !== undefined &&
+      (obj.implementationAddress = message.implementationAddress);
+    message.data !== undefined &&
+      (obj.data = base64FromBytes(message.data !== undefined ? message.data : new Uint8Array()));
+    message.value !== undefined && (obj.value = message.value);
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgUpdateImplmentationProposal>, I>>(
+    object: I,
+  ): MsgUpdateImplmentationProposal {
+    const message = createBaseMsgUpdateImplmentationProposal();
+    message.authority = object.authority ?? "";
+    message.proxyAddress = object.proxyAddress ?? "";
+    message.implementationAddress = object.implementationAddress ?? "";
+    message.data = object.data ?? new Uint8Array();
+    message.value = object.value ?? "";
+    return message;
+  },
+};
+function createBaseMsgUpdateImplmentationProposalResponse(): MsgUpdateImplmentationProposalResponse {
+  return {};
+}
+export const MsgUpdateImplmentationProposalResponse = {
+  typeUrl: "/stratos.evm.v1.MsgUpdateImplmentationProposalResponse",
+  encode(
+    _: MsgUpdateImplmentationProposalResponse,
+    writer: BinaryWriter = BinaryWriter.create(),
+  ): BinaryWriter {
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): MsgUpdateImplmentationProposalResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseMsgUpdateImplmentationProposalResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(_: any): MsgUpdateImplmentationProposalResponse {
+    const obj = createBaseMsgUpdateImplmentationProposalResponse();
+    return obj;
+  },
+  toJSON(_: MsgUpdateImplmentationProposalResponse): unknown {
+    const obj: any = {};
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<MsgUpdateImplmentationProposalResponse>, I>>(
+    _: I,
+  ): MsgUpdateImplmentationProposalResponse {
+    const message = createBaseMsgUpdateImplmentationProposalResponse();
+    return message;
+  },
+};
 /** Msg defines the evm Msg service. */
 export interface Msg {
   /** EthereumTx defines a method submitting Ethereum transactions. */
   EthereumTx(request: MsgEthereumTx): Promise<MsgEthereumTxResponse>;
+  /**
+   * UpdateParams defined a governance operation for updating the x/evm module parameters.
+   * The authority is hard-coded to the Cosmos SDK x/gov module account
+   */
+  UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse>;
+  /** UpdateImplmentationProposal defines a method for the new implemntation update for proposal. */
+  UpdateImplmentationProposal(
+    request: MsgUpdateImplmentationProposal,
+  ): Promise<MsgUpdateImplmentationProposalResponse>;
 }
 export class MsgClientImpl implements Msg {
   private readonly rpc: Rpc;
   constructor(rpc: Rpc) {
     this.rpc = rpc;
     this.EthereumTx = this.EthereumTx.bind(this);
+    this.UpdateParams = this.UpdateParams.bind(this);
+    this.UpdateImplmentationProposal = this.UpdateImplmentationProposal.bind(this);
   }
   EthereumTx(request: MsgEthereumTx): Promise<MsgEthereumTxResponse> {
     const data = MsgEthereumTx.encode(request).finish();
     const promise = this.rpc.request("stratos.evm.v1.Msg", "EthereumTx", data);
     return promise.then((data) => MsgEthereumTxResponse.decode(new BinaryReader(data)));
+  }
+  UpdateParams(request: MsgUpdateParams): Promise<MsgUpdateParamsResponse> {
+    const data = MsgUpdateParams.encode(request).finish();
+    const promise = this.rpc.request("stratos.evm.v1.Msg", "UpdateParams", data);
+    return promise.then((data) => MsgUpdateParamsResponse.decode(new BinaryReader(data)));
+  }
+  UpdateImplmentationProposal(
+    request: MsgUpdateImplmentationProposal,
+  ): Promise<MsgUpdateImplmentationProposalResponse> {
+    const data = MsgUpdateImplmentationProposal.encode(request).finish();
+    const promise = this.rpc.request("stratos.evm.v1.Msg", "UpdateImplmentationProposal", data);
+    return promise.then((data) => MsgUpdateImplmentationProposalResponse.decode(new BinaryReader(data)));
   }
 }

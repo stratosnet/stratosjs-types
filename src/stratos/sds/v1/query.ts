@@ -1,5 +1,4 @@
 /* eslint-disable */
-import { Coin } from "../../../cosmos/base/v1beta1/coin";
 import { FileInfo, Params } from "./sds";
 import { BinaryReader, BinaryWriter } from "../../../binary";
 import { isSet, DeepPartial, Exact, Rpc } from "../../../helpers";
@@ -14,7 +13,7 @@ export interface QueryFileUploadResponse {
   fileInfo?: FileInfo;
 }
 export interface QuerySimPrepayRequest {
-  amount: Coin[];
+  amount: string;
 }
 export interface QuerySimPrepayResponse {
   noz: string;
@@ -132,14 +131,14 @@ export const QueryFileUploadResponse = {
 };
 function createBaseQuerySimPrepayRequest(): QuerySimPrepayRequest {
   return {
-    amount: [],
+    amount: "",
   };
 }
 export const QuerySimPrepayRequest = {
   typeUrl: "/stratos.sds.v1.QuerySimPrepayRequest",
   encode(message: QuerySimPrepayRequest, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
-    for (const v of message.amount) {
-      Coin.encode(v!, writer.uint32(10).fork()).ldelim();
+    if (message.amount !== "") {
+      writer.uint32(10).string(message.amount);
     }
     return writer;
   },
@@ -151,7 +150,7 @@ export const QuerySimPrepayRequest = {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.amount.push(Coin.decode(reader, reader.uint32()));
+          message.amount = reader.string();
           break;
         default:
           reader.skipType(tag & 7);
@@ -162,21 +161,17 @@ export const QuerySimPrepayRequest = {
   },
   fromJSON(object: any): QuerySimPrepayRequest {
     const obj = createBaseQuerySimPrepayRequest();
-    if (Array.isArray(object?.amount)) obj.amount = object.amount.map((e: any) => Coin.fromJSON(e));
+    if (isSet(object.amount)) obj.amount = String(object.amount);
     return obj;
   },
   toJSON(message: QuerySimPrepayRequest): unknown {
     const obj: any = {};
-    if (message.amount) {
-      obj.amount = message.amount.map((e) => (e ? Coin.toJSON(e) : undefined));
-    } else {
-      obj.amount = [];
-    }
+    message.amount !== undefined && (obj.amount = message.amount);
     return obj;
   },
   fromPartial<I extends Exact<DeepPartial<QuerySimPrepayRequest>, I>>(object: I): QuerySimPrepayRequest {
     const message = createBaseQuerySimPrepayRequest();
-    message.amount = object.amount?.map((e) => Coin.fromPartial(e)) || [];
+    message.amount = object.amount ?? "";
     return message;
   },
 };

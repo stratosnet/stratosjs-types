@@ -2,7 +2,7 @@
 import { BinaryReader, BinaryWriter } from "../../../binary";
 import { isSet, DeepPartial, Exact, bytesFromBase64, base64FromBytes } from "../../../helpers";
 export const protobufPackage = "stratos.sds.v1";
-/** Params defines the Register module parameters */
+/** Params defines the parameters for the sds module. */
 export interface Params {
   bondDenom: string;
 }

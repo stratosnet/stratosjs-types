@@ -1,5 +1,5 @@
 /* eslint-disable */
-import { Params, Reward } from "./pot";
+import { Params, Reward, TotalReward } from "./pot";
 import { Coin } from "../../../cosmos/base/v1beta1/coin";
 import { BinaryReader, BinaryWriter } from "../../../binary";
 import { isSet, DeepPartial, Exact } from "../../../helpers";
@@ -13,6 +13,7 @@ export interface GenesisState {
   matureTotalInfo: MatureTotal[];
   individualRewardInfo: Reward[];
   maturedEpoch: string;
+  rewardTotalInfo: RewardTotal[];
 }
 export interface ImmatureTotal {
   walletAddress: string;
@@ -21,6 +22,10 @@ export interface ImmatureTotal {
 export interface MatureTotal {
   walletAddress: string;
   value: Coin[];
+}
+export interface RewardTotal {
+  epoch: string;
+  totalReward: TotalReward;
 }
 function createBaseGenesisState(): GenesisState {
   return {
@@ -31,6 +36,7 @@ function createBaseGenesisState(): GenesisState {
     matureTotalInfo: [],
     individualRewardInfo: [],
     maturedEpoch: "",
+    rewardTotalInfo: [],
   };
 }
 export const GenesisState = {
@@ -56,6 +62,9 @@ export const GenesisState = {
     }
     if (message.maturedEpoch !== "") {
       writer.uint32(58).string(message.maturedEpoch);
+    }
+    for (const v of message.rewardTotalInfo) {
+      RewardTotal.encode(v!, writer.uint32(66).fork()).ldelim();
     }
     return writer;
   },
@@ -87,6 +96,9 @@ export const GenesisState = {
         case 7:
           message.maturedEpoch = reader.string();
           break;
+        case 8:
+          message.rewardTotalInfo.push(RewardTotal.decode(reader, reader.uint32()));
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -106,6 +118,8 @@ export const GenesisState = {
     if (Array.isArray(object?.individualRewardInfo))
       obj.individualRewardInfo = object.individualRewardInfo.map((e: any) => Reward.fromJSON(e));
     if (isSet(object.maturedEpoch)) obj.maturedEpoch = String(object.maturedEpoch);
+    if (Array.isArray(object?.rewardTotalInfo))
+      obj.rewardTotalInfo = object.rewardTotalInfo.map((e: any) => RewardTotal.fromJSON(e));
     return obj;
   },
   toJSON(message: GenesisState): unknown {
@@ -130,6 +144,11 @@ export const GenesisState = {
       obj.individualRewardInfo = [];
     }
     message.maturedEpoch !== undefined && (obj.maturedEpoch = message.maturedEpoch);
+    if (message.rewardTotalInfo) {
+      obj.rewardTotalInfo = message.rewardTotalInfo.map((e) => (e ? RewardTotal.toJSON(e) : undefined));
+    } else {
+      obj.rewardTotalInfo = [];
+    }
     return obj;
   },
   fromPartial<I extends Exact<DeepPartial<GenesisState>, I>>(object: I): GenesisState {
@@ -145,6 +164,7 @@ export const GenesisState = {
     message.matureTotalInfo = object.matureTotalInfo?.map((e) => MatureTotal.fromPartial(e)) || [];
     message.individualRewardInfo = object.individualRewardInfo?.map((e) => Reward.fromPartial(e)) || [];
     message.maturedEpoch = object.maturedEpoch ?? "";
+    message.rewardTotalInfo = object.rewardTotalInfo?.map((e) => RewardTotal.fromPartial(e)) || [];
     return message;
   },
 };
@@ -265,6 +285,65 @@ export const MatureTotal = {
     const message = createBaseMatureTotal();
     message.walletAddress = object.walletAddress ?? "";
     message.value = object.value?.map((e) => Coin.fromPartial(e)) || [];
+    return message;
+  },
+};
+function createBaseRewardTotal(): RewardTotal {
+  return {
+    epoch: "",
+    totalReward: TotalReward.fromPartial({}),
+  };
+}
+export const RewardTotal = {
+  typeUrl: "/stratos.pot.v1.RewardTotal",
+  encode(message: RewardTotal, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+    if (message.epoch !== "") {
+      writer.uint32(10).string(message.epoch);
+    }
+    if (message.totalReward !== undefined) {
+      TotalReward.encode(message.totalReward, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): RewardTotal {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseRewardTotal();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.epoch = reader.string();
+          break;
+        case 2:
+          message.totalReward = TotalReward.decode(reader, reader.uint32());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(object: any): RewardTotal {
+    const obj = createBaseRewardTotal();
+    if (isSet(object.epoch)) obj.epoch = String(object.epoch);
+    if (isSet(object.totalReward)) obj.totalReward = TotalReward.fromJSON(object.totalReward);
+    return obj;
+  },
+  toJSON(message: RewardTotal): unknown {
+    const obj: any = {};
+    message.epoch !== undefined && (obj.epoch = message.epoch);
+    message.totalReward !== undefined &&
+      (obj.totalReward = message.totalReward ? TotalReward.toJSON(message.totalReward) : undefined);
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<RewardTotal>, I>>(object: I): RewardTotal {
+    const message = createBaseRewardTotal();
+    message.epoch = object.epoch ?? "";
+    if (object.totalReward !== undefined && object.totalReward !== null) {
+      message.totalReward = TotalReward.fromPartial(object.totalReward);
+    }
     return message;
   },
 };

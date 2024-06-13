@@ -14,7 +14,6 @@ export interface QueryVolumeReportRequest {
 export interface QueryVolumeReportResponse {
   /** node defines the the volumeReport info. */
   reportInfo?: ReportInfo;
-  height: bigint;
 }
 export interface ReportInfo {
   epoch: bigint;
@@ -32,25 +31,31 @@ export interface QueryParamsResponse {
 /** QueryRewardsByEpochRequest is request type for the Query/RewardsByEpoch by a given epoch RPC method */
 export interface QueryRewardsByEpochRequest {
   epoch: bigint;
-  walletAddress: string;
   pagination?: PageRequest;
 }
 /** QueryRewardsByEpochResponse is response type for the Query/RewardsByEpoch RPC method */
 export interface QueryRewardsByEpochResponse {
   rewards: Reward[];
-  height: bigint;
   pagination?: PageResponse;
 }
 /** QueryRewardsByOwnerRequest is request type for the Query/RewardsByOwner by a given owner RPC method */
-export interface QueryRewardsByOwnerRequest {
+export interface QueryRewardsByWalletRequest {
   walletAddress: string;
 }
 /** QueryRewardsByOwnerResponse is response type for the Query/RewardsByOwner RPC method */
-export interface QueryRewardsByOwnerResponse {
-  rewards?: RewardByOwner;
-  height: bigint;
+export interface QueryRewardsByWalletResponse {
+  rewards?: RewardByWallet;
 }
-export interface RewardByOwner {
+export interface QueryRewardsByWalletAndEpochRequest {
+  walletAddress: string;
+  epoch: bigint;
+  pagination?: PageRequest;
+}
+export interface QueryRewardsByWalletAndEpochResponse {
+  rewards: Reward[];
+  pagination?: PageResponse;
+}
+export interface RewardByWallet {
   walletAddress: string;
   matureTotalReward: Coin[];
   immatureTotalReward: Coin[];
@@ -62,7 +67,6 @@ export interface QuerySlashingByOwnerRequest {
 /** QuerySlashingByOwnerResponse is response type for the Query/Slashing RPC method */
 export interface QuerySlashingByOwnerResponse {
   slashing: string;
-  height: bigint;
 }
 export interface QueryTotalMinedTokenRequest {}
 export interface QueryTotalMinedTokenResponse {
@@ -77,6 +81,7 @@ export interface QueryTotalRewardByEpochRequest {
 }
 export interface QueryTotalRewardByEpochResponse {
   totalReward: TotalReward;
+  isLegacy: boolean;
 }
 export interface QueryMetricsRequest {}
 export interface QueryMetricsResponse {
@@ -135,7 +140,6 @@ export const QueryVolumeReportRequest = {
 function createBaseQueryVolumeReportResponse(): QueryVolumeReportResponse {
   return {
     reportInfo: undefined,
-    height: BigInt(0),
   };
 }
 export const QueryVolumeReportResponse = {
@@ -143,9 +147,6 @@ export const QueryVolumeReportResponse = {
   encode(message: QueryVolumeReportResponse, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
     if (message.reportInfo !== undefined) {
       ReportInfo.encode(message.reportInfo, writer.uint32(10).fork()).ldelim();
-    }
-    if (message.height !== BigInt(0)) {
-      writer.uint32(16).int64(message.height);
     }
     return writer;
   },
@@ -159,9 +160,6 @@ export const QueryVolumeReportResponse = {
         case 1:
           message.reportInfo = ReportInfo.decode(reader, reader.uint32());
           break;
-        case 2:
-          message.height = reader.int64();
-          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -172,14 +170,12 @@ export const QueryVolumeReportResponse = {
   fromJSON(object: any): QueryVolumeReportResponse {
     const obj = createBaseQueryVolumeReportResponse();
     if (isSet(object.reportInfo)) obj.reportInfo = ReportInfo.fromJSON(object.reportInfo);
-    if (isSet(object.height)) obj.height = BigInt(object.height.toString());
     return obj;
   },
   toJSON(message: QueryVolumeReportResponse): unknown {
     const obj: any = {};
     message.reportInfo !== undefined &&
       (obj.reportInfo = message.reportInfo ? ReportInfo.toJSON(message.reportInfo) : undefined);
-    message.height !== undefined && (obj.height = (message.height || BigInt(0)).toString());
     return obj;
   },
   fromPartial<I extends Exact<DeepPartial<QueryVolumeReportResponse>, I>>(
@@ -188,9 +184,6 @@ export const QueryVolumeReportResponse = {
     const message = createBaseQueryVolumeReportResponse();
     if (object.reportInfo !== undefined && object.reportInfo !== null) {
       message.reportInfo = ReportInfo.fromPartial(object.reportInfo);
-    }
-    if (object.height !== undefined && object.height !== null) {
-      message.height = BigInt(object.height.toString());
     }
     return message;
   },
@@ -359,7 +352,6 @@ export const QueryParamsResponse = {
 function createBaseQueryRewardsByEpochRequest(): QueryRewardsByEpochRequest {
   return {
     epoch: BigInt(0),
-    walletAddress: "",
     pagination: undefined,
   };
 }
@@ -369,11 +361,8 @@ export const QueryRewardsByEpochRequest = {
     if (message.epoch !== BigInt(0)) {
       writer.uint32(8).int64(message.epoch);
     }
-    if (message.walletAddress !== "") {
-      writer.uint32(18).string(message.walletAddress);
-    }
     if (message.pagination !== undefined) {
-      PageRequest.encode(message.pagination, writer.uint32(26).fork()).ldelim();
+      PageRequest.encode(message.pagination, writer.uint32(18).fork()).ldelim();
     }
     return writer;
   },
@@ -388,9 +377,6 @@ export const QueryRewardsByEpochRequest = {
           message.epoch = reader.int64();
           break;
         case 2:
-          message.walletAddress = reader.string();
-          break;
-        case 3:
           message.pagination = PageRequest.decode(reader, reader.uint32());
           break;
         default:
@@ -403,14 +389,12 @@ export const QueryRewardsByEpochRequest = {
   fromJSON(object: any): QueryRewardsByEpochRequest {
     const obj = createBaseQueryRewardsByEpochRequest();
     if (isSet(object.epoch)) obj.epoch = BigInt(object.epoch.toString());
-    if (isSet(object.walletAddress)) obj.walletAddress = String(object.walletAddress);
     if (isSet(object.pagination)) obj.pagination = PageRequest.fromJSON(object.pagination);
     return obj;
   },
   toJSON(message: QueryRewardsByEpochRequest): unknown {
     const obj: any = {};
     message.epoch !== undefined && (obj.epoch = (message.epoch || BigInt(0)).toString());
-    message.walletAddress !== undefined && (obj.walletAddress = message.walletAddress);
     message.pagination !== undefined &&
       (obj.pagination = message.pagination ? PageRequest.toJSON(message.pagination) : undefined);
     return obj;
@@ -422,7 +406,6 @@ export const QueryRewardsByEpochRequest = {
     if (object.epoch !== undefined && object.epoch !== null) {
       message.epoch = BigInt(object.epoch.toString());
     }
-    message.walletAddress = object.walletAddress ?? "";
     if (object.pagination !== undefined && object.pagination !== null) {
       message.pagination = PageRequest.fromPartial(object.pagination);
     }
@@ -432,7 +415,6 @@ export const QueryRewardsByEpochRequest = {
 function createBaseQueryRewardsByEpochResponse(): QueryRewardsByEpochResponse {
   return {
     rewards: [],
-    height: BigInt(0),
     pagination: undefined,
   };
 }
@@ -442,11 +424,8 @@ export const QueryRewardsByEpochResponse = {
     for (const v of message.rewards) {
       Reward.encode(v!, writer.uint32(10).fork()).ldelim();
     }
-    if (message.height !== BigInt(0)) {
-      writer.uint32(16).int64(message.height);
-    }
     if (message.pagination !== undefined) {
-      PageResponse.encode(message.pagination, writer.uint32(26).fork()).ldelim();
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).ldelim();
     }
     return writer;
   },
@@ -461,9 +440,6 @@ export const QueryRewardsByEpochResponse = {
           message.rewards.push(Reward.decode(reader, reader.uint32()));
           break;
         case 2:
-          message.height = reader.int64();
-          break;
-        case 3:
           message.pagination = PageResponse.decode(reader, reader.uint32());
           break;
         default:
@@ -476,7 +452,6 @@ export const QueryRewardsByEpochResponse = {
   fromJSON(object: any): QueryRewardsByEpochResponse {
     const obj = createBaseQueryRewardsByEpochResponse();
     if (Array.isArray(object?.rewards)) obj.rewards = object.rewards.map((e: any) => Reward.fromJSON(e));
-    if (isSet(object.height)) obj.height = BigInt(object.height.toString());
     if (isSet(object.pagination)) obj.pagination = PageResponse.fromJSON(object.pagination);
     return obj;
   },
@@ -487,7 +462,6 @@ export const QueryRewardsByEpochResponse = {
     } else {
       obj.rewards = [];
     }
-    message.height !== undefined && (obj.height = (message.height || BigInt(0)).toString());
     message.pagination !== undefined &&
       (obj.pagination = message.pagination ? PageResponse.toJSON(message.pagination) : undefined);
     return obj;
@@ -497,32 +471,29 @@ export const QueryRewardsByEpochResponse = {
   ): QueryRewardsByEpochResponse {
     const message = createBaseQueryRewardsByEpochResponse();
     message.rewards = object.rewards?.map((e) => Reward.fromPartial(e)) || [];
-    if (object.height !== undefined && object.height !== null) {
-      message.height = BigInt(object.height.toString());
-    }
     if (object.pagination !== undefined && object.pagination !== null) {
       message.pagination = PageResponse.fromPartial(object.pagination);
     }
     return message;
   },
 };
-function createBaseQueryRewardsByOwnerRequest(): QueryRewardsByOwnerRequest {
+function createBaseQueryRewardsByWalletRequest(): QueryRewardsByWalletRequest {
   return {
     walletAddress: "",
   };
 }
-export const QueryRewardsByOwnerRequest = {
-  typeUrl: "/stratos.pot.v1.QueryRewardsByOwnerRequest",
-  encode(message: QueryRewardsByOwnerRequest, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+export const QueryRewardsByWalletRequest = {
+  typeUrl: "/stratos.pot.v1.QueryRewardsByWalletRequest",
+  encode(message: QueryRewardsByWalletRequest, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
     if (message.walletAddress !== "") {
       writer.uint32(10).string(message.walletAddress);
     }
     return writer;
   },
-  decode(input: BinaryReader | Uint8Array, length?: number): QueryRewardsByOwnerRequest {
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryRewardsByWalletRequest {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryRewardsByOwnerRequest();
+    const message = createBaseQueryRewardsByWalletRequest();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -536,53 +507,46 @@ export const QueryRewardsByOwnerRequest = {
     }
     return message;
   },
-  fromJSON(object: any): QueryRewardsByOwnerRequest {
-    const obj = createBaseQueryRewardsByOwnerRequest();
+  fromJSON(object: any): QueryRewardsByWalletRequest {
+    const obj = createBaseQueryRewardsByWalletRequest();
     if (isSet(object.walletAddress)) obj.walletAddress = String(object.walletAddress);
     return obj;
   },
-  toJSON(message: QueryRewardsByOwnerRequest): unknown {
+  toJSON(message: QueryRewardsByWalletRequest): unknown {
     const obj: any = {};
     message.walletAddress !== undefined && (obj.walletAddress = message.walletAddress);
     return obj;
   },
-  fromPartial<I extends Exact<DeepPartial<QueryRewardsByOwnerRequest>, I>>(
+  fromPartial<I extends Exact<DeepPartial<QueryRewardsByWalletRequest>, I>>(
     object: I,
-  ): QueryRewardsByOwnerRequest {
-    const message = createBaseQueryRewardsByOwnerRequest();
+  ): QueryRewardsByWalletRequest {
+    const message = createBaseQueryRewardsByWalletRequest();
     message.walletAddress = object.walletAddress ?? "";
     return message;
   },
 };
-function createBaseQueryRewardsByOwnerResponse(): QueryRewardsByOwnerResponse {
+function createBaseQueryRewardsByWalletResponse(): QueryRewardsByWalletResponse {
   return {
     rewards: undefined,
-    height: BigInt(0),
   };
 }
-export const QueryRewardsByOwnerResponse = {
-  typeUrl: "/stratos.pot.v1.QueryRewardsByOwnerResponse",
-  encode(message: QueryRewardsByOwnerResponse, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+export const QueryRewardsByWalletResponse = {
+  typeUrl: "/stratos.pot.v1.QueryRewardsByWalletResponse",
+  encode(message: QueryRewardsByWalletResponse, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
     if (message.rewards !== undefined) {
-      RewardByOwner.encode(message.rewards, writer.uint32(10).fork()).ldelim();
-    }
-    if (message.height !== BigInt(0)) {
-      writer.uint32(16).int64(message.height);
+      RewardByWallet.encode(message.rewards, writer.uint32(10).fork()).ldelim();
     }
     return writer;
   },
-  decode(input: BinaryReader | Uint8Array, length?: number): QueryRewardsByOwnerResponse {
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryRewardsByWalletResponse {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseQueryRewardsByOwnerResponse();
+    const message = createBaseQueryRewardsByWalletResponse();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
         case 1:
-          message.rewards = RewardByOwner.decode(reader, reader.uint32());
-          break;
-        case 2:
-          message.height = reader.int64();
+          message.rewards = RewardByWallet.decode(reader, reader.uint32());
           break;
         default:
           reader.skipType(tag & 7);
@@ -591,42 +555,181 @@ export const QueryRewardsByOwnerResponse = {
     }
     return message;
   },
-  fromJSON(object: any): QueryRewardsByOwnerResponse {
-    const obj = createBaseQueryRewardsByOwnerResponse();
-    if (isSet(object.rewards)) obj.rewards = RewardByOwner.fromJSON(object.rewards);
-    if (isSet(object.height)) obj.height = BigInt(object.height.toString());
+  fromJSON(object: any): QueryRewardsByWalletResponse {
+    const obj = createBaseQueryRewardsByWalletResponse();
+    if (isSet(object.rewards)) obj.rewards = RewardByWallet.fromJSON(object.rewards);
     return obj;
   },
-  toJSON(message: QueryRewardsByOwnerResponse): unknown {
+  toJSON(message: QueryRewardsByWalletResponse): unknown {
     const obj: any = {};
     message.rewards !== undefined &&
-      (obj.rewards = message.rewards ? RewardByOwner.toJSON(message.rewards) : undefined);
-    message.height !== undefined && (obj.height = (message.height || BigInt(0)).toString());
+      (obj.rewards = message.rewards ? RewardByWallet.toJSON(message.rewards) : undefined);
     return obj;
   },
-  fromPartial<I extends Exact<DeepPartial<QueryRewardsByOwnerResponse>, I>>(
+  fromPartial<I extends Exact<DeepPartial<QueryRewardsByWalletResponse>, I>>(
     object: I,
-  ): QueryRewardsByOwnerResponse {
-    const message = createBaseQueryRewardsByOwnerResponse();
+  ): QueryRewardsByWalletResponse {
+    const message = createBaseQueryRewardsByWalletResponse();
     if (object.rewards !== undefined && object.rewards !== null) {
-      message.rewards = RewardByOwner.fromPartial(object.rewards);
-    }
-    if (object.height !== undefined && object.height !== null) {
-      message.height = BigInt(object.height.toString());
+      message.rewards = RewardByWallet.fromPartial(object.rewards);
     }
     return message;
   },
 };
-function createBaseRewardByOwner(): RewardByOwner {
+function createBaseQueryRewardsByWalletAndEpochRequest(): QueryRewardsByWalletAndEpochRequest {
+  return {
+    walletAddress: "",
+    epoch: BigInt(0),
+    pagination: undefined,
+  };
+}
+export const QueryRewardsByWalletAndEpochRequest = {
+  typeUrl: "/stratos.pot.v1.QueryRewardsByWalletAndEpochRequest",
+  encode(
+    message: QueryRewardsByWalletAndEpochRequest,
+    writer: BinaryWriter = BinaryWriter.create(),
+  ): BinaryWriter {
+    if (message.walletAddress !== "") {
+      writer.uint32(10).string(message.walletAddress);
+    }
+    if (message.epoch !== BigInt(0)) {
+      writer.uint32(16).int64(message.epoch);
+    }
+    if (message.pagination !== undefined) {
+      PageRequest.encode(message.pagination, writer.uint32(26).fork()).ldelim();
+    }
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryRewardsByWalletAndEpochRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryRewardsByWalletAndEpochRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.walletAddress = reader.string();
+          break;
+        case 2:
+          message.epoch = reader.int64();
+          break;
+        case 3:
+          message.pagination = PageRequest.decode(reader, reader.uint32());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(object: any): QueryRewardsByWalletAndEpochRequest {
+    const obj = createBaseQueryRewardsByWalletAndEpochRequest();
+    if (isSet(object.walletAddress)) obj.walletAddress = String(object.walletAddress);
+    if (isSet(object.epoch)) obj.epoch = BigInt(object.epoch.toString());
+    if (isSet(object.pagination)) obj.pagination = PageRequest.fromJSON(object.pagination);
+    return obj;
+  },
+  toJSON(message: QueryRewardsByWalletAndEpochRequest): unknown {
+    const obj: any = {};
+    message.walletAddress !== undefined && (obj.walletAddress = message.walletAddress);
+    message.epoch !== undefined && (obj.epoch = (message.epoch || BigInt(0)).toString());
+    message.pagination !== undefined &&
+      (obj.pagination = message.pagination ? PageRequest.toJSON(message.pagination) : undefined);
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryRewardsByWalletAndEpochRequest>, I>>(
+    object: I,
+  ): QueryRewardsByWalletAndEpochRequest {
+    const message = createBaseQueryRewardsByWalletAndEpochRequest();
+    message.walletAddress = object.walletAddress ?? "";
+    if (object.epoch !== undefined && object.epoch !== null) {
+      message.epoch = BigInt(object.epoch.toString());
+    }
+    if (object.pagination !== undefined && object.pagination !== null) {
+      message.pagination = PageRequest.fromPartial(object.pagination);
+    }
+    return message;
+  },
+};
+function createBaseQueryRewardsByWalletAndEpochResponse(): QueryRewardsByWalletAndEpochResponse {
+  return {
+    rewards: [],
+    pagination: undefined,
+  };
+}
+export const QueryRewardsByWalletAndEpochResponse = {
+  typeUrl: "/stratos.pot.v1.QueryRewardsByWalletAndEpochResponse",
+  encode(
+    message: QueryRewardsByWalletAndEpochResponse,
+    writer: BinaryWriter = BinaryWriter.create(),
+  ): BinaryWriter {
+    for (const v of message.rewards) {
+      Reward.encode(v!, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.pagination !== undefined) {
+      PageResponse.encode(message.pagination, writer.uint32(18).fork()).ldelim();
+    }
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryRewardsByWalletAndEpochResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryRewardsByWalletAndEpochResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.rewards.push(Reward.decode(reader, reader.uint32()));
+          break;
+        case 2:
+          message.pagination = PageResponse.decode(reader, reader.uint32());
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(object: any): QueryRewardsByWalletAndEpochResponse {
+    const obj = createBaseQueryRewardsByWalletAndEpochResponse();
+    if (Array.isArray(object?.rewards)) obj.rewards = object.rewards.map((e: any) => Reward.fromJSON(e));
+    if (isSet(object.pagination)) obj.pagination = PageResponse.fromJSON(object.pagination);
+    return obj;
+  },
+  toJSON(message: QueryRewardsByWalletAndEpochResponse): unknown {
+    const obj: any = {};
+    if (message.rewards) {
+      obj.rewards = message.rewards.map((e) => (e ? Reward.toJSON(e) : undefined));
+    } else {
+      obj.rewards = [];
+    }
+    message.pagination !== undefined &&
+      (obj.pagination = message.pagination ? PageResponse.toJSON(message.pagination) : undefined);
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryRewardsByWalletAndEpochResponse>, I>>(
+    object: I,
+  ): QueryRewardsByWalletAndEpochResponse {
+    const message = createBaseQueryRewardsByWalletAndEpochResponse();
+    message.rewards = object.rewards?.map((e) => Reward.fromPartial(e)) || [];
+    if (object.pagination !== undefined && object.pagination !== null) {
+      message.pagination = PageResponse.fromPartial(object.pagination);
+    }
+    return message;
+  },
+};
+function createBaseRewardByWallet(): RewardByWallet {
   return {
     walletAddress: "",
     matureTotalReward: [],
     immatureTotalReward: [],
   };
 }
-export const RewardByOwner = {
-  typeUrl: "/stratos.pot.v1.RewardByOwner",
-  encode(message: RewardByOwner, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+export const RewardByWallet = {
+  typeUrl: "/stratos.pot.v1.RewardByWallet",
+  encode(message: RewardByWallet, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
     if (message.walletAddress !== "") {
       writer.uint32(10).string(message.walletAddress);
     }
@@ -638,10 +741,10 @@ export const RewardByOwner = {
     }
     return writer;
   },
-  decode(input: BinaryReader | Uint8Array, length?: number): RewardByOwner {
+  decode(input: BinaryReader | Uint8Array, length?: number): RewardByWallet {
     const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
     let end = length === undefined ? reader.len : reader.pos + length;
-    const message = createBaseRewardByOwner();
+    const message = createBaseRewardByWallet();
     while (reader.pos < end) {
       const tag = reader.uint32();
       switch (tag >>> 3) {
@@ -661,8 +764,8 @@ export const RewardByOwner = {
     }
     return message;
   },
-  fromJSON(object: any): RewardByOwner {
-    const obj = createBaseRewardByOwner();
+  fromJSON(object: any): RewardByWallet {
+    const obj = createBaseRewardByWallet();
     if (isSet(object.walletAddress)) obj.walletAddress = String(object.walletAddress);
     if (Array.isArray(object?.matureTotalReward))
       obj.matureTotalReward = object.matureTotalReward.map((e: any) => Coin.fromJSON(e));
@@ -670,7 +773,7 @@ export const RewardByOwner = {
       obj.immatureTotalReward = object.immatureTotalReward.map((e: any) => Coin.fromJSON(e));
     return obj;
   },
-  toJSON(message: RewardByOwner): unknown {
+  toJSON(message: RewardByWallet): unknown {
     const obj: any = {};
     message.walletAddress !== undefined && (obj.walletAddress = message.walletAddress);
     if (message.matureTotalReward) {
@@ -685,8 +788,8 @@ export const RewardByOwner = {
     }
     return obj;
   },
-  fromPartial<I extends Exact<DeepPartial<RewardByOwner>, I>>(object: I): RewardByOwner {
-    const message = createBaseRewardByOwner();
+  fromPartial<I extends Exact<DeepPartial<RewardByWallet>, I>>(object: I): RewardByWallet {
+    const message = createBaseRewardByWallet();
     message.walletAddress = object.walletAddress ?? "";
     message.matureTotalReward = object.matureTotalReward?.map((e) => Coin.fromPartial(e)) || [];
     message.immatureTotalReward = object.immatureTotalReward?.map((e) => Coin.fromPartial(e)) || [];
@@ -744,7 +847,6 @@ export const QuerySlashingByOwnerRequest = {
 function createBaseQuerySlashingByOwnerResponse(): QuerySlashingByOwnerResponse {
   return {
     slashing: "",
-    height: BigInt(0),
   };
 }
 export const QuerySlashingByOwnerResponse = {
@@ -752,9 +854,6 @@ export const QuerySlashingByOwnerResponse = {
   encode(message: QuerySlashingByOwnerResponse, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
     if (message.slashing !== "") {
       writer.uint32(10).string(message.slashing);
-    }
-    if (message.height !== BigInt(0)) {
-      writer.uint32(16).int64(message.height);
     }
     return writer;
   },
@@ -768,9 +867,6 @@ export const QuerySlashingByOwnerResponse = {
         case 1:
           message.slashing = reader.string();
           break;
-        case 2:
-          message.height = reader.int64();
-          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -781,13 +877,11 @@ export const QuerySlashingByOwnerResponse = {
   fromJSON(object: any): QuerySlashingByOwnerResponse {
     const obj = createBaseQuerySlashingByOwnerResponse();
     if (isSet(object.slashing)) obj.slashing = String(object.slashing);
-    if (isSet(object.height)) obj.height = BigInt(object.height.toString());
     return obj;
   },
   toJSON(message: QuerySlashingByOwnerResponse): unknown {
     const obj: any = {};
     message.slashing !== undefined && (obj.slashing = message.slashing);
-    message.height !== undefined && (obj.height = (message.height || BigInt(0)).toString());
     return obj;
   },
   fromPartial<I extends Exact<DeepPartial<QuerySlashingByOwnerResponse>, I>>(
@@ -795,9 +889,6 @@ export const QuerySlashingByOwnerResponse = {
   ): QuerySlashingByOwnerResponse {
     const message = createBaseQuerySlashingByOwnerResponse();
     message.slashing = object.slashing ?? "";
-    if (object.height !== undefined && object.height !== null) {
-      message.height = BigInt(object.height.toString());
-    }
     return message;
   },
 };
@@ -1038,6 +1129,7 @@ export const QueryTotalRewardByEpochRequest = {
 function createBaseQueryTotalRewardByEpochResponse(): QueryTotalRewardByEpochResponse {
   return {
     totalReward: TotalReward.fromPartial({}),
+    isLegacy: false,
   };
 }
 export const QueryTotalRewardByEpochResponse = {
@@ -1048,6 +1140,9 @@ export const QueryTotalRewardByEpochResponse = {
   ): BinaryWriter {
     if (message.totalReward !== undefined) {
       TotalReward.encode(message.totalReward, writer.uint32(10).fork()).ldelim();
+    }
+    if (message.isLegacy === true) {
+      writer.uint32(16).bool(message.isLegacy);
     }
     return writer;
   },
@@ -1061,6 +1156,9 @@ export const QueryTotalRewardByEpochResponse = {
         case 1:
           message.totalReward = TotalReward.decode(reader, reader.uint32());
           break;
+        case 2:
+          message.isLegacy = reader.bool();
+          break;
         default:
           reader.skipType(tag & 7);
           break;
@@ -1071,12 +1169,14 @@ export const QueryTotalRewardByEpochResponse = {
   fromJSON(object: any): QueryTotalRewardByEpochResponse {
     const obj = createBaseQueryTotalRewardByEpochResponse();
     if (isSet(object.totalReward)) obj.totalReward = TotalReward.fromJSON(object.totalReward);
+    if (isSet(object.isLegacy)) obj.isLegacy = Boolean(object.isLegacy);
     return obj;
   },
   toJSON(message: QueryTotalRewardByEpochResponse): unknown {
     const obj: any = {};
     message.totalReward !== undefined &&
       (obj.totalReward = message.totalReward ? TotalReward.toJSON(message.totalReward) : undefined);
+    message.isLegacy !== undefined && (obj.isLegacy = message.isLegacy);
     return obj;
   },
   fromPartial<I extends Exact<DeepPartial<QueryTotalRewardByEpochResponse>, I>>(
@@ -1086,6 +1186,7 @@ export const QueryTotalRewardByEpochResponse = {
     if (object.totalReward !== undefined && object.totalReward !== null) {
       message.totalReward = TotalReward.fromPartial(object.totalReward);
     }
+    message.isLegacy = object.isLegacy ?? false;
     return message;
   },
 };
@@ -1179,8 +1280,12 @@ export interface Query {
   VolumeReport(request: QueryVolumeReportRequest): Promise<QueryVolumeReportResponse>;
   /** RewardsByEpoch queries Pot rewards by a given epoch. */
   RewardsByEpoch(request: QueryRewardsByEpochRequest): Promise<QueryRewardsByEpochResponse>;
-  /** RewardsByOwner queries Pot rewards by a given owner wallet address. */
-  RewardsByOwner(request: QueryRewardsByOwnerRequest): Promise<QueryRewardsByOwnerResponse>;
+  /** RewardsByOwner queries Pot rewards by a given beneficiary address. */
+  RewardsByWallet(request: QueryRewardsByWalletRequest): Promise<QueryRewardsByWalletResponse>;
+  /** RewardsByWalletAndEpoch queries Pot rewards by a given beneficiary address at the specific epoch. */
+  RewardsByWalletAndEpoch(
+    request: QueryRewardsByWalletAndEpochRequest,
+  ): Promise<QueryRewardsByWalletAndEpochResponse>;
   /** SlashingByOwner queries Pot slashing by owner wallet address. */
   SlashingByOwner(request: QuerySlashingByOwnerRequest): Promise<QuerySlashingByOwnerResponse>;
   /** Params queries POT module Params info. */
@@ -1196,7 +1301,8 @@ export class QueryClientImpl implements Query {
     this.rpc = rpc;
     this.VolumeReport = this.VolumeReport.bind(this);
     this.RewardsByEpoch = this.RewardsByEpoch.bind(this);
-    this.RewardsByOwner = this.RewardsByOwner.bind(this);
+    this.RewardsByWallet = this.RewardsByWallet.bind(this);
+    this.RewardsByWalletAndEpoch = this.RewardsByWalletAndEpoch.bind(this);
     this.SlashingByOwner = this.SlashingByOwner.bind(this);
     this.Params = this.Params.bind(this);
     this.TotalMinedToken = this.TotalMinedToken.bind(this);
@@ -1214,10 +1320,17 @@ export class QueryClientImpl implements Query {
     const promise = this.rpc.request("stratos.pot.v1.Query", "RewardsByEpoch", data);
     return promise.then((data) => QueryRewardsByEpochResponse.decode(new BinaryReader(data)));
   }
-  RewardsByOwner(request: QueryRewardsByOwnerRequest): Promise<QueryRewardsByOwnerResponse> {
-    const data = QueryRewardsByOwnerRequest.encode(request).finish();
-    const promise = this.rpc.request("stratos.pot.v1.Query", "RewardsByOwner", data);
-    return promise.then((data) => QueryRewardsByOwnerResponse.decode(new BinaryReader(data)));
+  RewardsByWallet(request: QueryRewardsByWalletRequest): Promise<QueryRewardsByWalletResponse> {
+    const data = QueryRewardsByWalletRequest.encode(request).finish();
+    const promise = this.rpc.request("stratos.pot.v1.Query", "RewardsByWallet", data);
+    return promise.then((data) => QueryRewardsByWalletResponse.decode(new BinaryReader(data)));
+  }
+  RewardsByWalletAndEpoch(
+    request: QueryRewardsByWalletAndEpochRequest,
+  ): Promise<QueryRewardsByWalletAndEpochResponse> {
+    const data = QueryRewardsByWalletAndEpochRequest.encode(request).finish();
+    const promise = this.rpc.request("stratos.pot.v1.Query", "RewardsByWalletAndEpoch", data);
+    return promise.then((data) => QueryRewardsByWalletAndEpochResponse.decode(new BinaryReader(data)));
   }
   SlashingByOwner(request: QuerySlashingByOwnerRequest): Promise<QuerySlashingByOwnerResponse> {
     const data = QuerySlashingByOwnerRequest.encode(request).finish();

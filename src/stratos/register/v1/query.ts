@@ -90,6 +90,12 @@ export interface QueryBondedMetaNodeCountResponse {
   /** number holds the total number of meta nodes. */
   number: bigint;
 }
+/** QueryRemainingOzoneLimitRequest is request type for the Query/RemainingOzoneLimit RPC method. */
+export interface QueryRemainingOzoneLimitRequest {}
+/** QueryRemainingOzoneLimitResponse is response type for the Query/RemainingOzoneLimit RPC method. */
+export interface QueryRemainingOzoneLimitResponse {
+  ozoneLimit: string;
+}
 export interface DepositInfo {
   networkAddress: string;
   pubkey?: Any;
@@ -947,6 +953,94 @@ export const QueryBondedMetaNodeCountResponse = {
     return message;
   },
 };
+function createBaseQueryRemainingOzoneLimitRequest(): QueryRemainingOzoneLimitRequest {
+  return {};
+}
+export const QueryRemainingOzoneLimitRequest = {
+  typeUrl: "/stratos.register.v1.QueryRemainingOzoneLimitRequest",
+  encode(_: QueryRemainingOzoneLimitRequest, writer: BinaryWriter = BinaryWriter.create()): BinaryWriter {
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryRemainingOzoneLimitRequest {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryRemainingOzoneLimitRequest();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(_: any): QueryRemainingOzoneLimitRequest {
+    const obj = createBaseQueryRemainingOzoneLimitRequest();
+    return obj;
+  },
+  toJSON(_: QueryRemainingOzoneLimitRequest): unknown {
+    const obj: any = {};
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryRemainingOzoneLimitRequest>, I>>(
+    _: I,
+  ): QueryRemainingOzoneLimitRequest {
+    const message = createBaseQueryRemainingOzoneLimitRequest();
+    return message;
+  },
+};
+function createBaseQueryRemainingOzoneLimitResponse(): QueryRemainingOzoneLimitResponse {
+  return {
+    ozoneLimit: "",
+  };
+}
+export const QueryRemainingOzoneLimitResponse = {
+  typeUrl: "/stratos.register.v1.QueryRemainingOzoneLimitResponse",
+  encode(
+    message: QueryRemainingOzoneLimitResponse,
+    writer: BinaryWriter = BinaryWriter.create(),
+  ): BinaryWriter {
+    if (message.ozoneLimit !== "") {
+      writer.uint32(10).string(message.ozoneLimit);
+    }
+    return writer;
+  },
+  decode(input: BinaryReader | Uint8Array, length?: number): QueryRemainingOzoneLimitResponse {
+    const reader = input instanceof BinaryReader ? input : new BinaryReader(input);
+    let end = length === undefined ? reader.len : reader.pos + length;
+    const message = createBaseQueryRemainingOzoneLimitResponse();
+    while (reader.pos < end) {
+      const tag = reader.uint32();
+      switch (tag >>> 3) {
+        case 1:
+          message.ozoneLimit = reader.string();
+          break;
+        default:
+          reader.skipType(tag & 7);
+          break;
+      }
+    }
+    return message;
+  },
+  fromJSON(object: any): QueryRemainingOzoneLimitResponse {
+    const obj = createBaseQueryRemainingOzoneLimitResponse();
+    if (isSet(object.ozoneLimit)) obj.ozoneLimit = String(object.ozoneLimit);
+    return obj;
+  },
+  toJSON(message: QueryRemainingOzoneLimitResponse): unknown {
+    const obj: any = {};
+    message.ozoneLimit !== undefined && (obj.ozoneLimit = message.ozoneLimit);
+    return obj;
+  },
+  fromPartial<I extends Exact<DeepPartial<QueryRemainingOzoneLimitResponse>, I>>(
+    object: I,
+  ): QueryRemainingOzoneLimitResponse {
+    const message = createBaseQueryRemainingOzoneLimitResponse();
+    message.ozoneLimit = object.ozoneLimit ?? "";
+    return message;
+  },
+};
 function createBaseDepositInfo(): DepositInfo {
   return {
     networkAddress: "",
@@ -1140,6 +1234,8 @@ export interface Query {
   ): Promise<QueryBondedResourceNodeCountResponse>;
   /** BondedMetaNodeCount queries total number of MetaNodes. */
   BondedMetaNodeCount(request?: QueryBondedMetaNodeCountRequest): Promise<QueryBondedMetaNodeCountResponse>;
+  /** RemainingOzoneLimit returns the current remaining ozone limit. */
+  RemainingOzoneLimit(request?: QueryRemainingOzoneLimitRequest): Promise<QueryRemainingOzoneLimitResponse>;
 }
 export class QueryClientImpl implements Query {
   private readonly rpc: Rpc;
@@ -1153,6 +1249,7 @@ export class QueryClientImpl implements Query {
     this.DepositTotal = this.DepositTotal.bind(this);
     this.BondedResourceNodeCount = this.BondedResourceNodeCount.bind(this);
     this.BondedMetaNodeCount = this.BondedMetaNodeCount.bind(this);
+    this.RemainingOzoneLimit = this.RemainingOzoneLimit.bind(this);
   }
   ResourceNode(request: QueryResourceNodeRequest): Promise<QueryResourceNodeResponse> {
     const data = QueryResourceNodeRequest.encode(request).finish();
@@ -1197,5 +1294,12 @@ export class QueryClientImpl implements Query {
     const data = QueryBondedMetaNodeCountRequest.encode(request).finish();
     const promise = this.rpc.request("stratos.register.v1.Query", "BondedMetaNodeCount", data);
     return promise.then((data) => QueryBondedMetaNodeCountResponse.decode(new BinaryReader(data)));
+  }
+  RemainingOzoneLimit(
+    request: QueryRemainingOzoneLimitRequest = {},
+  ): Promise<QueryRemainingOzoneLimitResponse> {
+    const data = QueryRemainingOzoneLimitRequest.encode(request).finish();
+    const promise = this.rpc.request("stratos.register.v1.Query", "RemainingOzoneLimit", data);
+    return promise.then((data) => QueryRemainingOzoneLimitResponse.decode(new BinaryReader(data)));
   }
 }

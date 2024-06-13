@@ -5,7 +5,7 @@ import { isSet, DeepPartial, Exact } from "../../../helpers";
 export const protobufPackage = "stratos.sds.v1";
 /** GenesisState defines the register module's genesis state. */
 export interface GenesisState {
-  params?: Params;
+  params: Params;
   files: GenesisFileInfo[];
 }
 export interface GenesisFileInfo {
@@ -14,7 +14,7 @@ export interface GenesisFileInfo {
 }
 function createBaseGenesisState(): GenesisState {
   return {
-    params: undefined,
+    params: Params.fromPartial({}),
     files: [],
   };
 }
